@@ -1,0 +1,3 @@
+E:/schoolwork/cosc 4353 (software design)/project/cosc-4353-project/build/CMakeFiles/server.dir
+E:/schoolwork/cosc 4353 (software design)/project/cosc-4353-project/build/CMakeFiles/ALL_BUILD.dir
+E:/schoolwork/cosc 4353 (software design)/project/cosc-4353-project/build/CMakeFiles/ZERO_CHECK.dir
