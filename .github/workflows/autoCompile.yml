@@ -1,24 +1,52 @@
 name: Auto Compile on Push
-
 on:
   push:
     branches:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest # Uses a GitHub-hosted runner
-
+  build-windows:
+    runs-on: windows-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+    
+    - name: Create build directory
+      run: mkdir build
+    
+    - name: Configure with CMake
+      run: |
+        cd build
+        cmake ..
+    
+    - name: Build project
+      run: |
+        cd build
+        cmake --build . --config Release
+    
+    - name: Rename executable
+      run: |
+        cd build/Release
+        ren server.exe serverWin.exe
+    
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: serverWin
+        path: build/Release/serverWin.exe
 
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y cmake
-
+    
     - name: Create build directory
       run: mkdir -p build
-
+    
     - name: Configure with CMake
       run: |
         cd build
@@ -28,9 +56,14 @@ jobs:
       run: |
         cd build
         cmake --build .
-
-    - name: Upload build artifacts
+    
+    - name: Rename executable
+      run: |
+        cd build
+        mv server serverLinux
+    
+    - name: Upload Linux artifact
       uses: actions/upload-artifact@v4
       with:
-        name: compiled-executable
-        path: build/Debug/*.exe
+        name: serverLinux
+        path: build/serverLinux
