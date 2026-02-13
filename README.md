@@ -1,3 +1,7 @@
 # cosc-4353-project
-TODO:
-create runner for auto compilation on github
+TODO:  
+create calender page  
+create active queues page  
+create join queue page  
+create admin panel  
+create account panel  
