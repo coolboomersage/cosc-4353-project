@@ -1,6 +1,15 @@
 #ifndef account_h
 #define account_h
-#include "../cpp-httplib-0.15.3/httplib.h"
+#include "../external/cpp-httplib-0.15.3/httplib.h"
+#include <string>
+
+bool checkCredentials(const std::string& username, const std::string& password) {
+    // TODO: Implement actual database check here
+    if (username == "admin" && password == "password") {
+        return true;
+    }
+    return false;
+}
 
 std::string loginPage() {
     return R"(
@@ -148,50 +157,43 @@ std::string loginPage() {
             </div>
             
             <script>
-                document.getElementById('loginForm').addEventListener('submit', function(e) {
+                document.getElementById('loginForm').addEventListener('submit', async function(e) {
                     e.preventDefault();
                     
                     const username = document.getElementById('username').value;
                     const password = document.getElementById('password').value;
                     const errorMessage = document.getElementById('errorMessage');
                     
-                    // TODO: Replace this with actual database check
-                    // For now, using a simple example check
-                    const validCredentials = checkCredentials(username, password);
-                    
-                    if (!validCredentials) {
-                        // Remove the 'show' class if it exists to reset animation
-                        errorMessage.classList.remove('show');
+                    try {
+                        // Send credentials to backend
+                        const response = await fetch('/api/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ username, password })
+                        });
                         
-                        // Trigger reflow to restart animation
-                        void errorMessage.offsetWidth;
+                        const result = await response.json();
                         
-                        // Add the 'show' class to display error and play animation
-                        errorMessage.classList.add('show');
-                        
-                        // Remove the class after animation completes (non-repeating)
-                        setTimeout(() => {
+                        if (!result.success) {
                             errorMessage.classList.remove('show');
-                        }, 3000);
-                    } else {
-                        // Successful login - redirect or perform action
-                        alert('Login successful!');
-                        window.location.href = '/';
+                            void errorMessage.offsetWidth;
+                            errorMessage.classList.add('show');
+                            
+                            setTimeout(() => {
+                                errorMessage.classList.remove('show');
+                            }, 3000);
+                        } else {
+                            alert('Login successful!');
+                            window.location.href = '/';
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        errorMessage.textContent = 'Server error. Please try again.';
+                        errorMessage.classList.add('show');
                     }
                 });
-                
-                function checkCredentials(username, password) {
-                    // TODO: Implement actual database check here
-                    // This is a placeholder function
-                    // Return false to test the error animation
-                    
-                    // Example hardcoded check (replace with database call):
-                    if (username === "admin" && password === "password") {
-                        return true;
-                    }
-                    
-                    return false;
-                }
             </script>
         </body>
         </html>
