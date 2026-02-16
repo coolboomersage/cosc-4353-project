@@ -1,5 +1,6 @@
 #include <iostream>
-#include "cpp-httplib-0.15.3/httplib.h"
+#include "external/cpp-httplib-0.15.3/httplib.h"
+#include "external/json.hpp"
 #include "sub pages/account.h"
 #include "sub pages/admin.h"
 #include "sub pages/calender.h"
@@ -46,6 +47,19 @@ int main() {
     server.Get("/edit-data", handleEditData);
     server.Get("/login", handleLogin);
     server.Get("/account-settings", handleAccountSettings);
+
+    server.Post("/api/login", [](const httplib::Request& req, httplib::Response& res) {
+    auto json = nlohmann::json::parse(req.body);
+    std::string username = json["username"];
+    std::string password = json["password"];
+    
+    bool isValid = checkCredentials(username, password);
+    
+    nlohmann::json response;
+    response["success"] = isValid;
+    
+    res.set_content(response.dump(), "application/json");
+});
 
     server.Get("/", [](const httplib::Request&, httplib::Response& res) {
         std::string html = R"(
