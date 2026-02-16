@@ -1,12 +1,17 @@
 #include <iostream>
 #include "cpp-httplib-0.15.3/httplib.h"
+#include "sub pages/account.h"
+#include "sub pages/admin.h"
+#include "sub pages/calender.h"
+#include "sub pages/join_queue.h"
+#include "sub pages/queues.h"
 
 int main() {
     httplib::Server server;
 
     // Blank handler functions
     auto handleCalendar = [](const httplib::Request&, httplib::Response& res) {
-        res.set_content("Calendar page - Coming soon!", "text/plain");
+        res.set_content(calenderPageData(), "text/html");
     };
 
     auto handleActiveQueues = [](const httplib::Request&, httplib::Response& res) {
