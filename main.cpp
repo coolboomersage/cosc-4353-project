@@ -31,7 +31,7 @@ int main() {
     };
 
     auto handleLogin = [](const httplib::Request&, httplib::Response& res) {
-        res.set_content("Login/Logout page - Coming soon!", "text/plain");
+        res.set_content(loginPage(), "text/html");
     };
 
     auto handleAccountSettings = [](const httplib::Request&, httplib::Response& res) {
