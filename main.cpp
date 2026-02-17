@@ -1,5 +1,6 @@
 #include <iostream>
 #include "external/cpp-httplib-0.15.3/httplib.h"
+#include "external/sqlite-amalgamation-3510200/sqlite3.h"
 #include "external/json.hpp"
 #include "sub pages/account.h"
 #include "sub pages/admin.h"
@@ -10,7 +11,7 @@
 int main() {
     httplib::Server server;
 
-    // Blank handler functions
+    // Handler functions
     auto handleCalendar = [](const httplib::Request&, httplib::Response& res) {
         res.set_content(calenderPageData(), "text/html");
     };
@@ -32,15 +33,11 @@ int main() {
     };
 
     auto handleLogin = [](const httplib::Request&, httplib::Response& res) {
-        // Check if user is already logged in
         if (currentUserId != 0) {
-            // User is logged in, log them out
             std::cout << "User " << getUsernameById(currentUserId) << " (ID: " << currentUserId << ") logged out" << std::endl;
             currentUserId = 0;
-            // Redirect to home page
             res.set_redirect("/");
         } else {
-            // User is not logged in, show login page
             res.set_content(loginPage(), "text/html");
         }
     };
@@ -64,6 +61,7 @@ int main() {
         if (currentUserId != 0) {
             response["username"] = getUsernameById(currentUserId);
             response["userId"] = currentUserId;
+            response["authLevel"] = getAuthLevelById(currentUserId);
         }
         res.set_content(response.dump(), "application/json");
     });
@@ -126,6 +124,10 @@ int main() {
                     .dropdown {
                         position: relative;
                         display: inline-block;
+                    }
+                    
+                    .dropdown.hidden {
+                        display: none;
                     }
                     
                     .dropdown-button {
@@ -223,8 +225,8 @@ int main() {
                     <a href="/active-queues">Active Queues</a>
                     <a href="/join-queue">Join a Queue</a>
                     
-                    <!-- Admin Dropdown -->
-                    <div class="dropdown">
+                    <!-- Admin Dropdown (hidden by default) -->
+                    <div class="dropdown hidden" id="adminDropdown">
                         <button class="dropdown-button">Admin</button>
                         <div class="dropdown-content">
                             <a href="/analytics">Analytics</a>
@@ -265,16 +267,25 @@ int main() {
                             const userInfoDiv = document.getElementById('userInfo');
                             const usernameSpan = document.getElementById('username');
                             const loginLogoutLink = document.getElementById('loginLogoutLink');
+                            const adminDropdown = document.getElementById('adminDropdown');
                             
                             if (data.loggedIn) {
                                 // User is logged in
                                 usernameSpan.textContent = data.username;
                                 userInfoDiv.classList.add('show');
                                 loginLogoutLink.textContent = 'Logout';
+                                
+                                // Show admin dropdown if auth level is 2 or higher
+                                if (data.authLevel >= 2) {
+                                    adminDropdown.classList.remove('hidden');
+                                } else {
+                                    adminDropdown.classList.add('hidden');
+                                }
                             } else {
                                 // User is not logged in
                                 userInfoDiv.classList.remove('show');
                                 loginLogoutLink.textContent = 'Login';
+                                adminDropdown.classList.add('hidden');
                             }
                         } catch (error) {
                             console.error('Error checking login status:', error);

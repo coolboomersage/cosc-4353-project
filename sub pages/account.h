@@ -276,6 +276,47 @@ std::string getUsernameById(int userId) {
     return username;
 }
 
+int getAuthLevelById(int userId) {
+    if (userId == 0) {
+        return 0;
+    }
+    
+    sqlite3* db;
+    int rc;
+    int authLevel = 0;
+
+    std::string exeDir = getExecutableDirectory();
+    std::string dbPath = exeDir + "/accounts.db";
+    
+    rc = sqlite3_open(dbPath.c_str(), &db);
+    
+    if (rc) {
+        std::cout << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return authLevel;
+    }
+    
+    sqlite3_stmt* stmt;
+    const char* selectSQL = "SELECT auth FROM accounts WHERE id = ?;";
+    
+    rc = sqlite3_prepare_v2(db, selectSQL, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cout << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return authLevel;
+    }
+    
+    sqlite3_bind_int(stmt, 1, userId);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        authLevel = sqlite3_column_int(stmt, 0);
+    }
+    
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    
+    return authLevel;
+}
+
 std::string loginPage() {
     return R"(
         <!DOCTYPE html>
