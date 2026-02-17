@@ -55,6 +55,24 @@ int main() {
     server.Get("/login", handleLogin);
     server.Get("/account-settings", handleAccountSettings);
 
+    
+    server.Get("/admin-dashboard", [](const httplib::Request&, httplib::Response& res) {
+    if (currentUserId == 0) {
+        res.set_redirect("/login");
+        return;
+    }
+    // homepage shows admin dropdown if authLevel >= 2,
+    // so match that rule here:
+    if (getAuthLevelById(currentUserId) < 2) {
+        res.status = 403;
+        res.set_content("Forbidden: Admins only", "text/plain");
+        return;
+    }
+
+    res.set_content(adminDashboardPage(getUsernameById(currentUserId)), "text/html");
+});
+
+
     server.Get("/create-account", [](const httplib::Request&, httplib::Response& res) {
         if (currentUserId != 0) {
             res.set_redirect("/");
@@ -251,6 +269,7 @@ int main() {
                     <div class="dropdown hidden" id="adminDropdown">
                         <button class="dropdown-button">Admin</button>
                         <div class="dropdown-content">
+                            <a href="/admin-dashboard">Dashboard</a>
                             <a href="/analytics">Analytics</a>
                             <a href="/edit-data">Edit Data</a>
                         </div>
