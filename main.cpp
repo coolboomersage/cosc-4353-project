@@ -1,5 +1,6 @@
 #include <iostream>
 #include "external/cpp-httplib-0.15.3/httplib.h"
+#include "external/sqlite-amalgamation-3510200/sqlite3.h"
 #include "external/json.hpp"
 #include "sub pages/account.h"
 #include "sub pages/admin.h"
@@ -10,7 +11,7 @@
 int main() {
     httplib::Server server;
 
-    // Blank handler functions
+    // Handler functions
     auto handleCalendar = [](const httplib::Request&, httplib::Response& res) {
         res.set_content(calenderPageData(), "text/html");
     };
@@ -32,7 +33,13 @@ int main() {
     };
 
     auto handleLogin = [](const httplib::Request&, httplib::Response& res) {
-        res.set_content(loginPage(), "text/html");
+        if (currentUserId != 0) {
+            std::cout << "User " << getUsernameById(currentUserId) << " (ID: " << currentUserId << ") logged out" << std::endl;
+            currentUserId = 0;
+            res.set_redirect("/");
+        } else {
+            res.set_content(loginPage(), "text/html");
+        }
     };
 
     auto handleAccountSettings = [](const httplib::Request&, httplib::Response& res) {
@@ -48,18 +55,51 @@ int main() {
     server.Get("/login", handleLogin);
     server.Get("/account-settings", handleAccountSettings);
 
+    server.Get("/create-account", [](const httplib::Request&, httplib::Response& res) {
+        if (currentUserId != 0) {
+            res.set_redirect("/");
+        } else {
+            res.set_content(createAccountPage(), "text/html");
+        }
+    });
+
+    server.Get("/api/check-login", [](const httplib::Request&, httplib::Response& res) {
+        nlohmann::json response;
+        response["loggedIn"] = (currentUserId != 0);
+        if (currentUserId != 0) {
+            response["username"] = getUsernameById(currentUserId);
+            response["userId"] = currentUserId;
+            response["authLevel"] = getAuthLevelById(currentUserId);
+        }
+        res.set_content(response.dump(), "application/json");
+    });
+
     server.Post("/api/login", [](const httplib::Request& req, httplib::Response& res) {
-    auto json = nlohmann::json::parse(req.body);
-    std::string username = json["username"];
-    std::string password = json["password"];
-    
-    bool isValid = checkCredentials(username, password);
-    
-    nlohmann::json response;
-    response["success"] = isValid;
-    
-    res.set_content(response.dump(), "application/json");
-});
+        auto json = nlohmann::json::parse(req.body);
+        std::string username = json["username"];
+        std::string password = json["password"];
+        LoginResult result = checkCredentials(username, password);
+        nlohmann::json response;
+        response["success"] = result.success;
+        if (result.success) {
+            response["userId"] = result.userId;
+        }
+        res.set_content(response.dump(), "application/json");
+    });
+
+    server.Post("/api/create-account", [](const httplib::Request& req, httplib::Response& res) {
+        auto json = nlohmann::json::parse(req.body);
+        std::string email = json["email"];
+        std::string password = json["password"];
+        CreateAccountResult result = createAccount(email, password);
+        nlohmann::json response;
+        response["success"] = result.success;
+        response["message"] = result.message;
+        if (result.success) {
+            response["userId"] = result.userId;
+        }
+        res.set_content(response.dump(), "application/json");
+    });
 
     server.Get("/", [](const httplib::Request&, httplib::Response& res) {
         std::string html = R"(
@@ -106,6 +146,10 @@ int main() {
                     .dropdown {
                         position: relative;
                         display: inline-block;
+                    }
+                    
+                    .dropdown.hidden {
+                        display: none;
                     }
                     
                     .dropdown-button {
@@ -159,6 +203,21 @@ int main() {
                         display: block;
                     }
                     
+                    /* User info display */
+                    .user-info {
+                        margin-left: auto;
+                        color: #4CAF50;
+                        padding: 10px 20px;
+                        background: #1e1e2f;
+                        border-radius: 6px;
+                        font-weight: bold;
+                        display: none;
+                    }
+                    
+                    .user-info.show {
+                        display: block;
+                    }
+                    
                     /* Main Content */
                     .content {
                         display: flex;
@@ -188,8 +247,8 @@ int main() {
                     <a href="/active-queues">Active Queues</a>
                     <a href="/join-queue">Join a Queue</a>
                     
-                    <!-- Admin Dropdown -->
-                    <div class="dropdown">
+                    <!-- Admin Dropdown (hidden by default) -->
+                    <div class="dropdown hidden" id="adminDropdown">
                         <button class="dropdown-button">Admin</button>
                         <div class="dropdown-content">
                             <a href="/analytics">Analytics</a>
@@ -201,9 +260,14 @@ int main() {
                     <div class="dropdown">
                         <button class="dropdown-button">Account</button>
                         <div class="dropdown-content">
-                            <a href="/login">Login / Logout</a>
+                            <a href="/login" id="loginLogoutLink">Login / Logout</a>
                             <a href="/account-settings">Account Settings</a>
                         </div>
+                    </div>
+                    
+                    <!-- User Info Display -->
+                    <div class="user-info" id="userInfo">
+                        <span id="username"></span>
                     </div>
                 </nav>
                 
@@ -214,12 +278,50 @@ int main() {
                         <p>Hello! You successfully connected to the localhost server.</p>
                     </div>
                 </div>
+                
+                <script>
+                    // Check login status when page loads
+                    async function checkLoginStatus() {
+                        try {
+                            const response = await fetch('/api/check-login');
+                            const data = await response.json();
+                            
+                            const userInfoDiv = document.getElementById('userInfo');
+                            const usernameSpan = document.getElementById('username');
+                            const loginLogoutLink = document.getElementById('loginLogoutLink');
+                            const adminDropdown = document.getElementById('adminDropdown');
+                            
+                            if (data.loggedIn) {
+                                // User is logged in
+                                usernameSpan.textContent = data.username;
+                                userInfoDiv.classList.add('show');
+                                loginLogoutLink.textContent = 'Logout';
+                                
+                                // Show admin dropdown if auth level is 2 or higher
+                                if (data.authLevel >= 2) {
+                                    adminDropdown.classList.remove('hidden');
+                                } else {
+                                    adminDropdown.classList.add('hidden');
+                                }
+                            } else {
+                                // User is not logged in
+                                userInfoDiv.classList.remove('show');
+                                loginLogoutLink.textContent = 'Login';
+                                adminDropdown.classList.add('hidden');
+                            }
+                        } catch (error) {
+                            console.error('Error checking login status:', error);
+                        }
+                    }
+                    
+                    // Check login status on page load
+                    checkLoginStatus();
+                </script>
             </body>
             </html>
         )";
 
         res.set_content(html, "text/html");
-        std::cout << "A user connected!" << std::endl;
     });
 
     std::cout << "Server running at http://localhost:8080\n";
