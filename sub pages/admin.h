@@ -1,6 +1,7 @@
-#ifndef admin_h
-#define admin_h
-#include "../external/cpp-httplib-0.15.3/httplib.h"
+#ifndef ADMIN_H
+#define ADMIN_H
+
+// #include "../external/cpp-httplib-0.15.3/httplib.h"
 #include <string>
 
 // UI-only Admin Dashboard page (static placeholder data)
