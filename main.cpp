@@ -55,6 +55,14 @@ int main() {
     server.Get("/login", handleLogin);
     server.Get("/account-settings", handleAccountSettings);
 
+    server.Get("/create-account", [](const httplib::Request&, httplib::Response& res) {
+        if (currentUserId != 0) {
+            res.set_redirect("/");
+        } else {
+            res.set_content(createAccountPage(), "text/html");
+        }
+    });
+
     server.Get("/api/check-login", [](const httplib::Request&, httplib::Response& res) {
         nlohmann::json response;
         response["loggedIn"] = (currentUserId != 0);
@@ -73,6 +81,20 @@ int main() {
         LoginResult result = checkCredentials(username, password);
         nlohmann::json response;
         response["success"] = result.success;
+        if (result.success) {
+            response["userId"] = result.userId;
+        }
+        res.set_content(response.dump(), "application/json");
+    });
+
+    server.Post("/api/create-account", [](const httplib::Request& req, httplib::Response& res) {
+        auto json = nlohmann::json::parse(req.body);
+        std::string email = json["email"];
+        std::string password = json["password"];
+        CreateAccountResult result = createAccount(email, password);
+        nlohmann::json response;
+        response["success"] = result.success;
+        response["message"] = result.message;
         if (result.success) {
             response["userId"] = result.userId;
         }

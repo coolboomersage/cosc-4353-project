@@ -41,7 +41,7 @@ std::string getExecutableDirectory() {
     return exePath.parent_path().string();
 }
 
-// Helper function to hash password with Argon2
+
 std::string hashPassword(const std::string& password) {
     const uint32_t HASH_LEN = 32;
     const uint32_t SALT_LEN = 16;
@@ -88,7 +88,6 @@ std::string hashPassword(const std::string& password) {
     return ss.str();
 }
 
-// Helper function to verify password against stored hash
 bool verifyPassword(const std::string& password, const std::string& storedHash) {
     const uint32_t HASH_LEN = 32;
     const uint32_t SALT_LEN = 16;
@@ -136,22 +135,18 @@ bool verifyPassword(const std::string& password, const std::string& storedHash) 
     return std::memcmp(expectedHash, computedHash, HASH_LEN) == 0;
 }
 
-// Helper function to validate email format
 bool isValidEmail(const std::string& email) {
-    // Check for @ symbol
     size_t atPos = email.find('@');
     if (atPos == std::string::npos || atPos == 0 || atPos == email.length() - 1) {
         return false;
     }
     
-    // Check for valid suffix
     size_t lastDotPos = email.find_last_of('.');
     if (lastDotPos == std::string::npos || lastDotPos <= atPos + 1 || lastDotPos == email.length() - 1) {
         return false;
     }
     
     std::string suffix = email.substr(lastDotPos + 1);
-    // List of valid suffixes
     std::vector<std::string> validSuffixes = {"com", "cc", "org", "net", "edu", "gov", "io", "co", "uk", "ca", "au"};
     
     for (const auto& validSuffix : validSuffixes) {
@@ -163,13 +158,11 @@ bool isValidEmail(const std::string& email) {
     return false;
 }
 
-// Structure to hold login result
 struct LoginResult {
     bool success;
     int userId;
 };
 
-// Structure to hold account creation result
 struct CreateAccountResult {
     bool success;
     std::string message;
@@ -273,7 +266,6 @@ LoginResult checkCredentials(const std::string& username, const std::string& pas
 CreateAccountResult createAccount(const std::string& email, const std::string& password) {
     CreateAccountResult result = {false, "", 0};
     
-    // Validate email format
     if (!isValidEmail(email)) {
         result.message = "Invalid email format. Must include @ and end with valid suffix (.com, .cc, etc.)";
         return result;
@@ -313,8 +305,13 @@ CreateAccountResult createAccount(const std::string& email, const std::string& p
         return result;
     }
     sqlite3_finalize(checkStmt);
+
+    if (password.length() < 5){
+        result.message = "password must be at least 5 characters";
+        sqlite3_close(db);
+        return result;
+    }
     
-    // Hash the password
     std::string passwordHash = hashPassword(password);
     if (passwordHash.empty()) {
         result.message = "Password hashing failed";
