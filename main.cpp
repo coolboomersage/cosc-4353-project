@@ -269,6 +269,7 @@ int main() {
                     <div class="dropdown hidden" id="adminDropdown">
                         <button class="dropdown-button">Admin</button>
                         <div class="dropdown-content">
+                            <a href="/admin-dashboard">Dashboard</a>
                             <a href="/analytics">Analytics</a>
                             <a href="/edit-data">Edit Data</a>
                         </div>
