@@ -49,18 +49,12 @@ int main() {
     server.Get("/account-settings", handleAccountSettings);
 
     server.Post("/api/login", [](const httplib::Request& req, httplib::Response& res) {
-        // Parse JSON body
         auto json = nlohmann::json::parse(req.body);
         std::string username = json["username"];
         std::string password = json["password"];
-        
-        // Check credentials using C++ function
         bool isValid = checkCredentials(username, password);
-        
-        // Return JSON response
         nlohmann::json response;
         response["success"] = isValid;
-        
         res.set_content(response.dump(), "application/json");
     });
 

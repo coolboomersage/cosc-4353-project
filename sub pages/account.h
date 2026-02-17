@@ -1,9 +1,13 @@
 #ifndef account_h
 #define account_h
 #include "../external/cpp-httplib-0.15.3/httplib.h"
-#include <string>
-#include <filesystem>
 #include "../external/sqlite-amalgamation-3510200/sqlite3.h"
+#include "../external/phc-winner-argon2-20190702/include/argon2.h"
+#include <cstring>
+#include <filesystem>
+#include <iomanip>
+#include <sstream>
+#include <random>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -33,17 +37,113 @@ std::string getExecutableDirectory() {
     return exePath.parent_path().string();
 }
 
+// Helper function to hash password with Argon2
+std::string hashPassword(const std::string& password) {
+    const uint32_t HASH_LEN = 32;
+    const uint32_t SALT_LEN = 16;
+    const uint32_t T_COST = 2;
+    const uint32_t M_COST = 65536;
+    const uint32_t PARALLELISM = 1;
+    
+    // Generate random salt
+    uint8_t salt[SALT_LEN];
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 255);
+    for (int i = 0; i < SALT_LEN; i++) {
+        salt[i] = dis(gen);
+    }
+    
+    uint8_t hash[HASH_LEN];
+    int result = argon2id_hash_raw(
+        T_COST,
+        M_COST,
+        PARALLELISM,
+        password.c_str(),
+        password.length(),
+        salt,
+        SALT_LEN,
+        hash,
+        HASH_LEN
+    );
+    
+    if (result != ARGON2_OK) {
+        std::cerr << "Argon2 hashing failed: " << argon2_error_message(result) << std::endl;
+        return "";
+    }
+    
+    std::stringstream ss;
+    for (int i = 0; i < SALT_LEN; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)salt[i];
+    }
+    ss << ":";
+    for (int i = 0; i < HASH_LEN; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+    
+    return ss.str();
+}
+
+// Helper function to verify password against stored hash
+bool verifyPassword(const std::string& password, const std::string& storedHash) {
+    const uint32_t HASH_LEN = 32;
+    const uint32_t SALT_LEN = 16;
+    const uint32_t T_COST = 2;
+    const uint32_t M_COST = 65536;
+    const uint32_t PARALLELISM = 1;
+    
+    size_t separatorPos = storedHash.find(':');
+    if (separatorPos == std::string::npos) {
+        return false;
+    }
+    
+    std::string saltHex = storedHash.substr(0, separatorPos);
+    std::string hashHex = storedHash.substr(separatorPos + 1);
+    uint8_t salt[SALT_LEN];
+    uint8_t expectedHash[HASH_LEN];
+    
+    for (int i = 0; i < SALT_LEN; i++) {
+        std::string byte = saltHex.substr(i * 2, 2);
+        salt[i] = std::stoi(byte, nullptr, 16);
+    }
+    
+    for (int i = 0; i < HASH_LEN; i++) {
+        std::string byte = hashHex.substr(i * 2, 2);
+        expectedHash[i] = std::stoi(byte, nullptr, 16);
+    }
+    
+    uint8_t computedHash[HASH_LEN];
+    int result = argon2id_hash_raw(
+        T_COST,
+        M_COST,
+        PARALLELISM,
+        password.c_str(),
+        password.length(),
+        salt,
+        SALT_LEN,
+        computedHash,
+        HASH_LEN
+    );
+    
+    if (result != ARGON2_OK) {
+        return false;
+    }
+    
+    return std::memcmp(expectedHash, computedHash, HASH_LEN) == 0;
+}
+
 bool checkCredentials(const std::string& username, const std::string& password) {
     sqlite3* db;
     int rc;
+    char* errMsg = nullptr;
 
-    // Get the directory where the executable is located
     std::string exeDir = getExecutableDirectory();
     std::string dbPath = exeDir + "/accounts.db";
     
     std::cout << "Attempting to open database at: " << dbPath << std::endl;
 
-    // Open database (creates if doesn't exist)
+    bool dbExists = std::ifstream(dbPath).good();
+    
     rc = sqlite3_open(dbPath.c_str(), &db);
     
     if (rc) {
@@ -54,11 +154,72 @@ bool checkCredentials(const std::string& username, const std::string& password) 
         std::cout << "Opened database successfully at: " << dbPath << std::endl;
     }
     
-    // TODO: Implement actual database check here
-    // For now, just checking if we can open the database
+    if (!dbExists) {
+        std::cout << "Database is new, initializing with default data..." << std::endl;
+        
+        const char* createTableSQL = 
+            "CREATE TABLE IF NOT EXISTS accounts ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "username TEXT NOT NULL, "
+            "hash TEXT UNIQUE NOT NULL, "
+            "email TEXT NOT NULL);";
+        
+        rc = sqlite3_exec(db, createTableSQL, nullptr, nullptr, &errMsg);
+        if (rc != SQLITE_OK) {
+            std::cout << "Failed to create table: " << errMsg << std::endl;
+            sqlite3_free(errMsg);
+            sqlite3_close(db);
+            return false;
+        }
+        
+        // Hash the default password
+        std::string defaultPasswordHash = hashPassword("root123");
+        
+        std::string insertDefaultSQL = 
+            "INSERT INTO accounts (username, hash, email) VALUES ('root', '" 
+            + defaultPasswordHash + "', 'root@root');";
+        
+        rc = sqlite3_exec(db, insertDefaultSQL.c_str(), nullptr, nullptr, &errMsg);
+        if (rc != SQLITE_OK) {
+            std::cout << "Failed to insert default account: " << errMsg << std::endl;
+            sqlite3_free(errMsg);
+            sqlite3_close(db);
+            return false;
+        }
+        
+        std::cout << "Default account created (username: root, password: root123)" << std::endl;
+    }
     
+    sqlite3_stmt* stmt;
+    const char* selectSQL = "SELECT hash FROM accounts WHERE username = ?;";
+    
+    rc = sqlite3_prepare_v2(db, selectSQL, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cout << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return false;
+    }
+    
+    sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
+    bool credentialsValid = false;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char* storedHash = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        
+        credentialsValid = verifyPassword(password, storedHash);
+        
+        if (credentialsValid) {
+            std::cout << "Credentials valid for user: " << username << std::endl;
+        } else {
+            std::cout << "Invalid password for user: " << username << std::endl;
+        }
+    } else {
+        std::cout << "User not found: " << username << std::endl;
+    }
+    
+    sqlite3_finalize(stmt);
     sqlite3_close(db);
-    return false;  // Change this when you implement actual credential checking
+    
+    return credentialsValid;
 }
 
 std::string loginPage() {
