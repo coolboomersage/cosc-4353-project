@@ -2,13 +2,63 @@
 #define account_h
 #include "../external/cpp-httplib-0.15.3/httplib.h"
 #include <string>
+#include <filesystem>
+#include "../external/sqlite-amalgamation-3510200/sqlite3.h"
+
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <unistd.h>
+    #include <limits.h>
+#endif
+
+std::string getExecutableDirectory() {
+    char buffer[1024];
+    
+    #ifdef _WIN32
+        // Windows implementation
+        GetModuleFileNameA(NULL, buffer, sizeof(buffer));
+    #else
+        // Linux implementation
+        ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+        if (len != -1) {
+            buffer[len] = '\0';
+        } else {
+            // Fallback if /proc/self/exe doesn't work
+            return ".";
+        }
+    #endif
+    
+    std::filesystem::path exePath(buffer);
+    return exePath.parent_path().string();
+}
 
 bool checkCredentials(const std::string& username, const std::string& password) {
-    // TODO: Implement actual database check here
-    if (username == "admin" && password == "password") {
-        return true;
+    sqlite3* db;
+    int rc;
+
+    // Get the directory where the executable is located
+    std::string exeDir = getExecutableDirectory();
+    std::string dbPath = exeDir + "/accounts.db";
+    
+    std::cout << "Attempting to open database at: " << dbPath << std::endl;
+
+    // Open database (creates if doesn't exist)
+    rc = sqlite3_open(dbPath.c_str(), &db);
+    
+    if (rc) {
+        std::cout << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return false;
+    } else {
+        std::cout << "Opened database successfully at: " << dbPath << std::endl;
     }
-    return false;
+    
+    // TODO: Implement actual database check here
+    // For now, just checking if we can open the database
+    
+    sqlite3_close(db);
+    return false;  // Change this when you implement actual credential checking
 }
 
 std::string loginPage() {
