@@ -32,7 +32,17 @@ int main() {
     };
 
     auto handleLogin = [](const httplib::Request&, httplib::Response& res) {
-        res.set_content(loginPage(), "text/html");
+        // Check if user is already logged in
+        if (currentUserId != 0) {
+            // User is logged in, log them out
+            std::cout << "User " << getUsernameById(currentUserId) << " (ID: " << currentUserId << ") logged out" << std::endl;
+            currentUserId = 0;
+            // Redirect to home page
+            res.set_redirect("/");
+        } else {
+            // User is not logged in, show login page
+            res.set_content(loginPage(), "text/html");
+        }
     };
 
     auto handleAccountSettings = [](const httplib::Request&, httplib::Response& res) {
@@ -48,13 +58,26 @@ int main() {
     server.Get("/login", handleLogin);
     server.Get("/account-settings", handleAccountSettings);
 
+    server.Get("/api/check-login", [](const httplib::Request&, httplib::Response& res) {
+        nlohmann::json response;
+        response["loggedIn"] = (currentUserId != 0);
+        if (currentUserId != 0) {
+            response["username"] = getUsernameById(currentUserId);
+            response["userId"] = currentUserId;
+        }
+        res.set_content(response.dump(), "application/json");
+    });
+
     server.Post("/api/login", [](const httplib::Request& req, httplib::Response& res) {
         auto json = nlohmann::json::parse(req.body);
         std::string username = json["username"];
         std::string password = json["password"];
-        bool isValid = checkCredentials(username, password);
+        LoginResult result = checkCredentials(username, password);
         nlohmann::json response;
-        response["success"] = isValid;
+        response["success"] = result.success;
+        if (result.success) {
+            response["userId"] = result.userId;
+        }
         res.set_content(response.dump(), "application/json");
     });
 
@@ -156,6 +179,21 @@ int main() {
                         display: block;
                     }
                     
+                    /* User info display */
+                    .user-info {
+                        margin-left: auto;
+                        color: #4CAF50;
+                        padding: 10px 20px;
+                        background: #1e1e2f;
+                        border-radius: 6px;
+                        font-weight: bold;
+                        display: none;
+                    }
+                    
+                    .user-info.show {
+                        display: block;
+                    }
+                    
                     /* Main Content */
                     .content {
                         display: flex;
@@ -198,9 +236,14 @@ int main() {
                     <div class="dropdown">
                         <button class="dropdown-button">Account</button>
                         <div class="dropdown-content">
-                            <a href="/login">Login / Logout</a>
+                            <a href="/login" id="loginLogoutLink">Login / Logout</a>
                             <a href="/account-settings">Account Settings</a>
                         </div>
+                    </div>
+                    
+                    <!-- User Info Display -->
+                    <div class="user-info" id="userInfo">
+                        <span id="username"></span>
                     </div>
                 </nav>
                 
@@ -211,12 +254,41 @@ int main() {
                         <p>Hello! You successfully connected to the localhost server.</p>
                     </div>
                 </div>
+                
+                <script>
+                    // Check login status when page loads
+                    async function checkLoginStatus() {
+                        try {
+                            const response = await fetch('/api/check-login');
+                            const data = await response.json();
+                            
+                            const userInfoDiv = document.getElementById('userInfo');
+                            const usernameSpan = document.getElementById('username');
+                            const loginLogoutLink = document.getElementById('loginLogoutLink');
+                            
+                            if (data.loggedIn) {
+                                // User is logged in
+                                usernameSpan.textContent = data.username;
+                                userInfoDiv.classList.add('show');
+                                loginLogoutLink.textContent = 'Logout';
+                            } else {
+                                // User is not logged in
+                                userInfoDiv.classList.remove('show');
+                                loginLogoutLink.textContent = 'Login';
+                            }
+                        } catch (error) {
+                            console.error('Error checking login status:', error);
+                        }
+                    }
+                    
+                    // Check login status on page load
+                    checkLoginStatus();
+                </script>
             </body>
             </html>
         )";
 
         res.set_content(html, "text/html");
-        std::cout << "A user connected!" << std::endl;
     });
 
     std::cout << "Server running at http://localhost:8080\n";

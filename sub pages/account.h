@@ -16,6 +16,9 @@
     #include <limits.h>
 #endif
 
+// Global session variable to track logged-in user (0 = no user logged in)
+int currentUserId = 0;
+
 std::string getExecutableDirectory() {
     char buffer[1024];
     
@@ -132,7 +135,14 @@ bool verifyPassword(const std::string& password, const std::string& storedHash) 
     return std::memcmp(expectedHash, computedHash, HASH_LEN) == 0;
 }
 
-bool checkCredentials(const std::string& username, const std::string& password) {
+// Structure to hold login result
+struct LoginResult {
+    bool success;
+    int userId;
+};
+
+LoginResult checkCredentials(const std::string& username, const std::string& password) {
+    LoginResult result = {false, 0};
     sqlite3* db;
     int rc;
     char* errMsg = nullptr;
@@ -149,7 +159,7 @@ bool checkCredentials(const std::string& username, const std::string& password) 
     if (rc) {
         std::cout << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
         sqlite3_close(db);
-        return false;
+        return result;
     } else {
         std::cout << "Opened database successfully at: " << dbPath << std::endl;
     }
@@ -162,53 +172,56 @@ bool checkCredentials(const std::string& username, const std::string& password) 
             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
             "username TEXT NOT NULL, "
             "hash TEXT UNIQUE NOT NULL, "
-            "email TEXT NOT NULL);";
+            "email TEXT NOT NULL, "
+            "auth INTEGER NOT NULL);";
         
         rc = sqlite3_exec(db, createTableSQL, nullptr, nullptr, &errMsg);
         if (rc != SQLITE_OK) {
             std::cout << "Failed to create table: " << errMsg << std::endl;
             sqlite3_free(errMsg);
             sqlite3_close(db);
-            return false;
+            return result;
         }
         
-        // Hash the default password
         std::string defaultPasswordHash = hashPassword("root123");
         
         std::string insertDefaultSQL = 
-            "INSERT INTO accounts (username, hash, email) VALUES ('root', '" 
-            + defaultPasswordHash + "', 'root@root');";
+            "INSERT INTO accounts (username, hash, email, auth) VALUES ('root', '" 
+            + defaultPasswordHash + "', 'root@root', 3);";
         
         rc = sqlite3_exec(db, insertDefaultSQL.c_str(), nullptr, nullptr, &errMsg);
         if (rc != SQLITE_OK) {
             std::cout << "Failed to insert default account: " << errMsg << std::endl;
             sqlite3_free(errMsg);
             sqlite3_close(db);
-            return false;
+            return result;
         }
         
         std::cout << "Default account created (username: root, password: root123)" << std::endl;
     }
     
     sqlite3_stmt* stmt;
-    const char* selectSQL = "SELECT hash FROM accounts WHERE username = ?;";
+    const char* selectSQL = "SELECT id, hash FROM accounts WHERE username = ?;";
     
     rc = sqlite3_prepare_v2(db, selectSQL, -1, &stmt, nullptr);
     if (rc != SQLITE_OK) {
         std::cout << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
         sqlite3_close(db);
-        return false;
+        return result;
     }
     
     sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
-    bool credentialsValid = false;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-        const char* storedHash = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        int userId = sqlite3_column_int(stmt, 0);
+        const char* storedHash = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         
-        credentialsValid = verifyPassword(password, storedHash);
+        bool credentialsValid = verifyPassword(password, storedHash);
         
         if (credentialsValid) {
-            std::cout << "Credentials valid for user: " << username << std::endl;
+            std::cout << "Credentials valid for user: " << username << " (ID: " << userId << ")" << std::endl;
+            result.success = true;
+            result.userId = userId;
+            currentUserId = userId;
         } else {
             std::cout << "Invalid password for user: " << username << std::endl;
         }
@@ -219,7 +232,48 @@ bool checkCredentials(const std::string& username, const std::string& password) 
     sqlite3_finalize(stmt);
     sqlite3_close(db);
     
-    return credentialsValid;
+    return result;
+}
+
+std::string getUsernameById(int userId) {
+    if (userId == 0) {
+        return "";
+    }
+    
+    sqlite3* db;
+    int rc;
+    std::string username = "";
+
+    std::string exeDir = getExecutableDirectory();
+    std::string dbPath = exeDir + "/accounts.db";
+    
+    rc = sqlite3_open(dbPath.c_str(), &db);
+    
+    if (rc) {
+        std::cout << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return username;
+    }
+    
+    sqlite3_stmt* stmt;
+    const char* selectSQL = "SELECT username FROM accounts WHERE id = ?;";
+    
+    rc = sqlite3_prepare_v2(db, selectSQL, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cout << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return username;
+    }
+    
+    sqlite3_bind_int(stmt, 1, userId);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+    }
+    
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    
+    return username;
 }
 
 std::string loginPage() {
@@ -307,8 +361,7 @@ std::string loginPage() {
                     background: #45a049;
                 }
                 
-                .error-message {
-                    color: #ff4444;
+                .message {
                     text-align: center;
                     margin-top: 20px;
                     font-size: 14px;
@@ -316,9 +369,24 @@ std::string loginPage() {
                     transition: opacity 0.3s;
                 }
                 
-                .error-message.show {
+                .message.error {
+                    color: #ff4444;
+                }
+                
+                .message.success {
+                    color: #4CAF50;
+                }
+                
+                .message.show {
                     opacity: 1;
+                }
+                
+                .message.error.show {
                     animation: glowError 0.5s ease-in-out;
+                }
+                
+                .message.success.show {
+                    animation: glowSuccess 0.5s ease-in-out;
                 }
                 
                 @keyframes glowError {
@@ -330,6 +398,18 @@ std::string loginPage() {
                     }
                     100% {
                         text-shadow: 0 0 0px #ff4444;
+                    }
+                }
+                
+                @keyframes glowSuccess {
+                    0% {
+                        text-shadow: 0 0 0px #4CAF50;
+                    }
+                    50% {
+                        text-shadow: 0 0 20px #4CAF50, 0 0 30px #4CAF50;
+                    }
+                    100% {
+                        text-shadow: 0 0 0px #4CAF50;
                     }
                 }
                 
@@ -360,7 +440,7 @@ std::string loginPage() {
                         <input type="password" id="password" name="password" required>
                     </div>
                     <button type="submit" class="login-button">Login</button>
-                    <div id="errorMessage" class="error-message">
+                    <div id="message" class="message error">
                         Incorrect username / password
                     </div>
                 </form>
@@ -373,7 +453,7 @@ std::string loginPage() {
                     
                     const username = document.getElementById('username').value;
                     const password = document.getElementById('password').value;
-                    const errorMessage = document.getElementById('errorMessage');
+                    const messageDiv = document.getElementById('message');
                     
                     try {
                         // Send credentials to backend
@@ -388,21 +468,32 @@ std::string loginPage() {
                         const result = await response.json();
                         
                         if (!result.success) {
-                            errorMessage.classList.remove('show');
-                            void errorMessage.offsetWidth;
-                            errorMessage.classList.add('show');
+                            // Show error message
+                            messageDiv.textContent = 'Incorrect username / password';
+                            messageDiv.className = 'message error';
+                            void messageDiv.offsetWidth; // Force reflow
+                            messageDiv.classList.add('show');
                             
                             setTimeout(() => {
-                                errorMessage.classList.remove('show');
+                                messageDiv.classList.remove('show');
                             }, 3000);
                         } else {
-                            alert('Login successful!');
-                            window.location.href = '/';
+                            // Show success message
+                            messageDiv.textContent = 'Login successful!';
+                            messageDiv.className = 'message success';
+                            void messageDiv.offsetWidth; // Force reflow
+                            messageDiv.classList.add('show');
+                            
+                            // Redirect after a short delay
+                            setTimeout(() => {
+                                window.location.href = '/';
+                            }, 1500);
                         }
                     } catch (error) {
                         console.error('Login error:', error);
-                        errorMessage.textContent = 'Server error. Please try again.';
-                        errorMessage.classList.add('show');
+                        messageDiv.textContent = 'Server error. Please try again.';
+                        messageDiv.className = 'message error';
+                        messageDiv.classList.add('show');
                     }
                 });
             </script>
