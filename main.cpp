@@ -58,6 +58,15 @@ int main() {
     server.Get("/account-settings", handleAccountSettings);
 
     
+    server.Get("/dashboard", [](const httplib::Request&, httplib::Response& res) {
+    if (currentUserId == 0) {
+        res.set_redirect("/login");
+        return;
+    }
+    res.set_content(userDashboardPage(getUsernameById(currentUserId)), "text/html");
+});
+
+    
     server.Get("/admin-dashboard", [](const httplib::Request&, httplib::Response& res) {
     if (currentUserId == 0) {
         res.set_redirect("/login");
@@ -263,6 +272,7 @@ int main() {
             <body>
                 <!-- Navigation Bar -->
                 <nav class="navbar">
+                    <a href="/dashboard">Dashboard</a>
                     <a href="/calendar">Calendar</a>
                     <a href="/active-queues">Active Queues</a>
                     <a href="/join-queue">Join a Queue</a>
