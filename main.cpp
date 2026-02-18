@@ -7,6 +7,8 @@
 #include "sub pages/calender.h"
 #include "sub pages/join_queue.h"
 #include "sub pages/queues.h"
+#include "sub pages/user_dashboard.h"
+
 
 int main() {
     httplib::Server server;
