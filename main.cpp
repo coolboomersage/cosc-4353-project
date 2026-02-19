@@ -66,6 +66,12 @@ int main() {
     res.set_content(userDashboardPage(getUsernameById(currentUserId)), "text/html");
 });
 
+    server.Get("/admin/create-queue", [](const httplib::Request& req, httplib::Response& res) {
+        std::string username = "admin"; // placeholder
+
+        res.set_content(createQueuePage(username), "text/html");
+    });
+
     
     server.Get("/admin-dashboard", [](const httplib::Request&, httplib::Response& res) {
     if (currentUserId == 0) {
@@ -129,6 +135,52 @@ int main() {
         }
         res.set_content(response.dump(), "application/json");
     });
+
+    server.Post("/admin/create-queue", [](const httplib::Request& req, httplib::Response& res) {
+    std::string username = req.get_header_value("X-Username");
+    if (username.empty()) username = "admin";
+
+    std::string service_name      = req.get_param_value("service_name");
+    std::string description       = req.get_param_value("description");
+    std::string expected_duration = req.get_param_value("expected_duration");
+    std::string priority          = req.get_param_value("priority");
+
+    if (service_name.empty() || service_name.size() > 100) {
+        res.set_content(createQueuePage(username,
+            "Service name is required and must be 100 characters or fewer."), "text/html");
+        return;
+    }
+
+    if (description.empty()) {
+        res.set_content(createQueuePage(username,
+            "Description is required."), "text/html");
+        return;
+    }
+
+    int duration = 0;
+    try {
+        duration = std::stoi(expected_duration);
+    } catch (...) {
+        duration = -1;
+    }
+    if (duration < 1 || duration > 480) {
+        res.set_content(createQueuePage(username,
+            "Expected duration must be a number between 1 and 480 minutes."), "text/html");
+        return;
+    }
+
+    if (priority != "low" && priority != "medium" && priority != "high") {
+        res.set_content(createQueuePage(username,
+            "Priority level must be low, medium, or high."), "text/html");
+        return;
+    }
+
+    // add to service db here
+    // e.g. db.createQueue(service_name, description, duration, priority);
+
+    // Redirect back to dashboard on success
+    res.set_redirect("/admin-dashboard");
+});
 
     server.Get("/", [](const httplib::Request&, httplib::Response& res) {
         std::string html = R"(
