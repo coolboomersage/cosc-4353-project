@@ -219,7 +219,7 @@ static inline std::string createQueuePage(const std::string& username, const std
 // ─── Admin Dashboard Page ─────────────────────────────────────────────────────
 // Route: GET /admin
 static inline std::string adminDashboardPage(const std::string& username) {
-    return R"(
+    return R"HTML(
 <!doctype html>
 <html>
 <head>
@@ -250,13 +250,120 @@ static inline std::string adminDashboardPage(const std::string& username) {
            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono"; font-size: 12px; }
     .log div { margin-bottom: 8px; }
     .topbar { display:flex; justify-content:space-between; align-items:center; margin-top: 16px; }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+
+    /* Modal Box */
+    .modal {
+      background: white;
+      border-radius: 16px;
+      width: 480px;
+      max-width: 95vw;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h2 { margin: 0; font-size: 16px; }
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #6b7280;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    .modal-close:hover { color: #111827; }
+    .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* Queue list */
+    .queue-list { list-style: none; margin: 0; padding: 0; }
+    .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      background: #fff;
+      cursor: grab;
+      user-select: none;
+      transition: box-shadow 0.15s, background 0.15s;
+    }
+    .queue-item:active { cursor: grabbing; }
+    .queue-item.dragging {
+      opacity: 0.4;
+    }
+    .queue-item.drag-over {
+      border-color: #6366f1;
+      background: #eef2ff;
+      box-shadow: 0 0 0 2px #6366f1;
+    }
+    .drag-handle {
+      color: #9ca3af;
+      font-size: 16px;
+      cursor: grab;
+      flex-shrink: 0;
+    }
+    .queue-position {
+      width: 24px;
+      height: 24px;
+      background: #111827;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .queue-info { flex: 1; }
+    .queue-name { font-weight: 600; font-size: 14px; }
+    .queue-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
+    .queue-wait {
+      font-size: 12px;
+      color: #374151;
+      background: #f3f4f6;
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .drag-hint { font-size: 12px; color: #9ca3af; margin-bottom: 12px; }
   </style>
 </head>
 <body>
   <header>
     <div><strong>Admin Dashboard</strong> <span class="muted" style="color:#9ca3af;">(UI placeholders)</span></div>
     <div>
-      <span class="muted" style="color:#9ca3af;">Signed in as</span> <strong>)" + username + R"(</strong>
+      <span class="muted" style="color:#9ca3af;">Signed in as</span> <strong>)" + username + R"HTML(</strong>
       <a href="/">Home</a>
       <a href="/login">Logout</a>
     </div>
@@ -293,7 +400,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
               <td>5</td>
               <td>12 min</td>
               <td>
-                <button class="btn">View</button>
+                <button class="btn" onclick="openQueueModal('Advising')">View</button>
                 <button class="btn">Close</button>
                 <button class="btn">Clear</button>
               </td>
@@ -304,7 +411,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
               <td>4</td>
               <td>9 min</td>
               <td>
-                <button class="btn">View</button>
+                <button class="btn" onclick="openQueueModal('Tutoring')">View</button>
                 <button class="btn">Close</button>
                 <button class="btn">Clear</button>
               </td>
@@ -315,7 +422,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
               <td>2</td>
               <td>—</td>
               <td>
-                <button class="btn">View</button>
+                <button class="btn" onclick="openQueueModal('Tech Support')">View</button>
                 <button class="btn">Open</button>
                 <button class="btn">Clear</button>
               </td>
@@ -364,9 +471,136 @@ static inline std::string adminDashboardPage(const std::string& username) {
     </div>
 
   </div>
+
+  <!-- Queue View Modal -->
+  <div class="modal-overlay" id="queueModal" onclick="handleOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Queue: Advising</h2>
+        <button class="modal-close" onclick="closeQueueModal()">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="drag-hint">&#9776; Drag rows to reorder the queue.</div>
+        <ul class="queue-list" id="queueList"></ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeQueueModal()">Close</button>
+        <button class="btn primary" onclick="saveQueueOrder()">Save Order</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Static user data per queue
+    const queueData = {
+      'Advising': [
+        { name: 'Alice Johnson',    reason: 'Course registration help',  waited: '2 min' },
+        { name: 'Bob Smith',        reason: 'Degree audit question',      waited: '7 min' },
+        { name: 'Carol Williams',   reason: 'Transfer credit inquiry',    waited: '13 min' },
+        { name: 'David Lee',        reason: 'Scholarship advising',       waited: '18 min' },
+        { name: 'Eva Martinez',     reason: 'General advising',           waited: '24 min' },
+      ],
+      'Tutoring': [
+        { name: 'Frank Brown',      reason: 'Calculus II help',           waited: '3 min' },
+        { name: 'Grace Kim',        reason: 'Python debugging',           waited: '9 min' },
+        { name: 'Henry Davis',      reason: 'Linear algebra review',      waited: '15 min' },
+        { name: 'Isla Thompson',    reason: 'Essay feedback',             waited: '20 min' },
+      ],
+      'Tech Support': [
+        { name: 'Jack Wilson',      reason: 'VPN setup issue',            waited: '5 min' },
+        { name: 'Karen Moore',      reason: 'Printer not working',        waited: '11 min' },
+      ],
+    };
+
+    let currentQueue = null;
+    let dragSrcIndex = null;
+
+    function openQueueModal(queueName) {
+      currentQueue = queueName;
+      document.getElementById('modalTitle').textContent = 'Queue: ' + queueName;
+      renderQueueList();
+      document.getElementById('queueModal').classList.add('active');
+    }
+
+    function closeQueueModal() {
+      document.getElementById('queueModal').classList.remove('active');
+      currentQueue = null;
+    }
+
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('queueModal')) closeQueueModal();
+    }
+
+    function renderQueueList() {
+      const list = document.getElementById('queueList');
+      list.innerHTML = '';
+      const users = queueData[currentQueue];
+      users.forEach((user, index) => {
+        const li = document.createElement('li');
+        li.className = 'queue-item';
+        li.draggable = true;
+        li.dataset.index = index;
+        li.innerHTML = `
+          <span class="drag-handle">&#9776;</span>
+          <span class="queue-position">${index + 1}</span>
+          <div class="queue-info">
+            <div class="queue-name">${user.name}</div>
+            <div class="queue-meta">${user.reason}</div>
+          </div>
+          <span class="queue-wait">Waited ${user.waited}</span>
+        `;
+        li.addEventListener('dragstart', onDragStart);
+        li.addEventListener('dragover', onDragOver);
+        li.addEventListener('dragleave', onDragLeave);
+        li.addEventListener('drop', onDrop);
+        li.addEventListener('dragend', onDragEnd);
+        list.appendChild(li);
+      });
+    }
+
+    function onDragStart(e) {
+      dragSrcIndex = parseInt(this.dataset.index);
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function onDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      this.classList.add('drag-over');
+    }
+
+    function onDragLeave() {
+      this.classList.remove('drag-over');
+    }
+
+    function onDrop(e) {
+      e.preventDefault();
+      const destIndex = parseInt(this.dataset.index);
+      if (dragSrcIndex === null || dragSrcIndex === destIndex) return;
+
+      const users = queueData[currentQueue];
+      const [moved] = users.splice(dragSrcIndex, 1);
+      users.splice(destIndex, 0, moved);
+      renderQueueList();
+    }
+
+    function onDragEnd() {
+      document.querySelectorAll('.queue-item').forEach(el => {
+        el.classList.remove('dragging', 'drag-over');
+      });
+      dragSrcIndex = null;
+    }
+
+    function saveQueueOrder() {
+      // Placeholder: in a real implementation this would POST the new order to the server
+      alert('Queue order saved! (UI placeholder — no server call made)');
+      closeQueueModal();
+    }
+  </script>
 </body>
 </html>
-)";
+)HTML";
 }
 
 #endif
