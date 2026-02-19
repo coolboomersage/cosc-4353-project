@@ -145,7 +145,7 @@ static inline std::string createQueuePage(const std::string& username, const std
         </div>
 
         <div class="actions">
-          <a href="/admin"><button type="button" class="btn">Cancel</button></a>
+          <a href="/admin-dashboard"><button type="button" class="btn">Cancel</button></a>
           <button type="submit" class="btn primary">Create Queue</button>
         </div>
 
@@ -217,7 +217,7 @@ static inline std::string createQueuePage(const std::string& username, const std
 }
 
 // ─── Admin Dashboard Page ─────────────────────────────────────────────────────
-// Route: GET /admin
+// Route: GET /admin-dashboard
 static inline std::string adminDashboardPage(const std::string& username) {
     return R"HTML(
 <!doctype html>
@@ -242,6 +242,8 @@ static inline std::string adminDashboardPage(const std::string& username) {
     th { color:#374151; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
     .btn { padding: 6px 10px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; }
     .btn.primary { background:#111827; color:white; border-color:#111827; }
+    .btn.serve { background:#16a34a; color:white; border-color:#16a34a; }
+    .btn.serve:hover { background:#15803d; border-color:#15803d; }
     .pill { padding: 3px 8px; border-radius: 999px; font-size: 12px; display:inline-block; }
     .pill.open { background:#dcfce7; color:#166534; }
     .pill.closed { background:#fee2e2; color:#991b1b; }
@@ -400,6 +402,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
               <td>5</td>
               <td>12 min</td>
               <td>
+                <button class="btn serve" onclick="serveNext('Advising')">Serve Next</button>
                 <button class="btn" onclick="openQueueModal('Advising')">View</button>
                 <button class="btn">Close</button>
                 <button class="btn">Clear</button>
@@ -411,6 +414,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
               <td>4</td>
               <td>9 min</td>
               <td>
+                <button class="btn serve" onclick="serveNext('Tutoring')">Serve Next</button>
                 <button class="btn" onclick="openQueueModal('Tutoring')">View</button>
                 <button class="btn">Close</button>
                 <button class="btn">Clear</button>
@@ -422,6 +426,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
               <td>2</td>
               <td>—</td>
               <td>
+                <button class="btn serve" onclick="serveNext('Tech Support')">Serve Next</button>
                 <button class="btn" onclick="openQueueModal('Tech Support')">View</button>
                 <button class="btn">Open</button>
                 <button class="btn">Clear</button>
@@ -515,6 +520,16 @@ static inline std::string adminDashboardPage(const std::string& username) {
     let currentQueue = null;
     let dragSrcIndex = null;
 
+    function serveNext(queueName) {
+      const users = queueData[queueName];
+      if (!users || users.length === 0) {
+        alert('No one is waiting in the ' + queueName + ' queue.');
+        return;
+      }
+      const next = users.shift();
+      alert('Now serving: ' + next.name + '\nReason: ' + next.reason + '\n\n(UI placeholder — no server call made)');
+    }
+
     function openQueueModal(queueName) {
       currentQueue = queueName;
       document.getElementById('modalTitle').textContent = 'Queue: ' + queueName;
@@ -602,5 +617,4 @@ static inline std::string adminDashboardPage(const std::string& username) {
 </html>
 )HTML";
 }
-
 #endif
