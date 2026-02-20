@@ -23,7 +23,7 @@ int main() {
     };
 
     auto handleJoinQueue = [](const httplib::Request&, httplib::Response& res) {
-        res.set_content("Join Queue page - Coming soon!", "text/plain");
+        res.set_content(joinQueuePage(), "text/html");
     };
 
     auto handleAnalytics = [](const httplib::Request&, httplib::Response& res) {
