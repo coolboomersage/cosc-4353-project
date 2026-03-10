@@ -11,6 +11,7 @@
 
 
 int main() {
+    initCoutCapture(); // start cout capture for admin panel
     httplib::Server server;
 
     // Handler functions

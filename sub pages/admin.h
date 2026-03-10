@@ -4,6 +4,39 @@
 // #include "../external/cpp-httplib-0.15.3/httplib.h"
 #include <string>
 
+class TeeBuf : public std::streambuf {
+  private:
+      std::streambuf* original;
+      std::stringstream capture;
+
+  protected:
+      int overflow(int c) override {
+          if (c == EOF) return !EOF;
+
+          capture.put((char)c);
+          return original->sputc(c);
+      }
+
+  public:
+      TeeBuf(std::streambuf* orig) : original(orig) {}
+
+      std::string getCaptured() const {
+          return capture.str();
+      }
+
+      void clear() {
+          capture.str("");
+          capture.clear();
+      }
+};
+
+TeeBuf* tee;
+
+void initCoutCapture() {
+    tee = new TeeBuf(std::cout.rdbuf());
+    std::cout.rdbuf(tee);
+}
+
 // ─── Create Queue Page ────────────────────────────────────────────────────────
 // Route: GET /admin/create-queue
 static inline std::string createQueuePage(const std::string& username, const std::string& error = "") {
@@ -219,6 +252,28 @@ static inline std::string createQueuePage(const std::string& username, const std
 // ─── Admin Dashboard Page ─────────────────────────────────────────────────────
 // Route: GET /admin-dashboard
 static inline std::string adminDashboardPage(const std::string& username) {
+  // Grab and split captured cout output into log lines
+    std::string rawLogs = tee ? tee->getCaptured() : "";
+    std::string logHtml;
+    std::istringstream stream(rawLogs);
+    std::string line;
+    while (std::getline(stream, line)) {
+        if (!line.empty()) {
+            // Basic HTML escaping for safety
+            std::string escaped;
+            for (char c : line) {
+                if      (c == '<') escaped += "&lt;";
+                else if (c == '>') escaped += "&gt;";
+                else if (c == '&') escaped += "&amp;";
+                else               escaped += c;
+            }
+            logHtml += "<div>" + escaped + "</div>\n";
+        }
+    }
+    if (logHtml.empty()) {
+        logHtml = "<div style='color:#6b7280;'>No log output captured yet.</div>";
+    }
+
     return R"HTML(
 <!doctype html>
 <html>
@@ -437,16 +492,12 @@ static inline std::string adminDashboardPage(const std::string& username) {
       </div>
 
       <div class="card">
-        <div style="font-weight:700;">System Log</div>
-        <div class="muted" style="margin-bottom:10px;">Notifications can plug in here later</div>
-        <div class="log">
-          <div>[INFO] Server started</div>
-          <div>[INFO] root logged in</div>
-          <div>[WARN] Queue "Advising" nearing capacity</div>
-          <div>[INFO] New account created: user42@example.com</div>
-          <div>[INFO] Placeholder log entry...</div>
+          <div style="font-weight:700;">System Log</div>
+          <div class="muted" style="margin-bottom:10px;">Live cout output</div>
+          <div class="log" id="systemLog">
+          )HTML" + logHtml + R"HTML(
+          </div>
         </div>
-      </div>
     </div>
 
     <div class="card" style="margin-top:16px;">
