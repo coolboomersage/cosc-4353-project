@@ -14,6 +14,15 @@ int main() {
     initCoutCapture(); // start cout capture for admin panel
     httplib::Server server;
 
+    //unitTest vector defined for use in the admin panel for unit testing
+    std::vector<UnitTestBase*> tests;
+    tests.push_back(new UnitTest<bool, std::string, 1>(
+        "email pass",
+        [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+        {"cbs@abc.cc"},
+        true
+    ));
+
     // Handler functions
     auto handleCalendar = [](const httplib::Request&, httplib::Response& res) {
         res.set_content(calenderPageData(), "text/html");
@@ -110,6 +119,11 @@ int main() {
         res.set_content(response.dump(), "application/json");
     });
 
+    server.Get("/admin/unit-tests", [&](const httplib::Request& req, httplib::Response& res) {
+        const std::string username = "admin"; //placeholder
+        res.set_content(unitTestsPage(username, tests), "text/html");
+    });
+
     server.Post("/api/login", [](const httplib::Request& req, httplib::Response& res) {
         auto json = nlohmann::json::parse(req.body);
         std::string username = json["username"];
@@ -181,7 +195,28 @@ int main() {
 
     // Redirect back to dashboard on success
     res.set_redirect("/admin-dashboard");
-});
+    });
+
+    auto* testsPtr = &tests;
+
+    server.Post(R"(/admin/unit-tests/run/(\d+))", [testsPtr](const httplib::Request& req, httplib::Response& res) {
+        const std::string& idxStr = req.matches[1];
+        const std::size_t  idx    = static_cast<std::size_t>(std::stoul(idxStr));
+
+        if (idx >= testsPtr->size()) {
+            res.status = 404;
+            res.set_content(R"({"error":"test index out of range"})", "application/json");
+            return;
+        }
+
+        (*testsPtr)[idx]->runTest();
+        const bool passed = (*testsPtr)[idx]->getResult();
+
+        res.set_content(
+            std::string(R"({"pass":)") + (passed ? "true" : "false") + "}",
+            "application/json"
+        );
+    });
 
     server.Get("/", [](const httplib::Request&, httplib::Response& res) {
         std::string html = R"(

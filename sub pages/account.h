@@ -41,7 +41,6 @@ std::string getExecutableDirectory() {
     return exePath.parent_path().string();
 }
 
-
 std::string hashPassword(const std::string& password) {
     const uint32_t HASH_LEN = 32;
     const uint32_t SALT_LEN = 16;

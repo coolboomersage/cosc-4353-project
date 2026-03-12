@@ -3,7 +3,60 @@
 
 // #include "../external/cpp-httplib-0.15.3/httplib.h"
 #include <string>
+#include <array>
+#include <functional>
+#include <vector>
+#include <sstream>
 
+
+// ─── UnitTestBase ─────────────────────────────────────────────────────────────
+// Non-templated abstract base so tests can be stored in a std::vector
+class UnitTestBase {
+public:
+    virtual void runTest() = 0;
+    virtual bool getResult() const = 0;
+    virtual const std::string& getName() const = 0;
+    virtual bool hasRun() const = 0;
+    virtual ~UnitTestBase() = default;
+};
+
+
+// ─── UnitTest ─────────────────────────────────────────────────────────────────
+template <typename TResult, typename TInput, std::size_t N>
+class UnitTest : public UnitTestBase {
+  private:
+      std::string name;
+      bool pass = false;
+      bool ran  = false;
+      std::function<TResult(std::array<TInput, N>)> func;
+      std::array<TInput, N> inputVars;
+      TResult intendedResult;
+
+  public:
+      bool getResult() const override { return pass; }
+      bool hasRun()    const override { return ran;  }
+      const std::string& getName() const override { return name; }
+
+      void runTest() override {
+          pass = (func(inputVars) == intendedResult);
+          ran  = true;
+      }
+
+      UnitTest(std::string inputName,
+              std::function<TResult(std::array<TInput, N>)> inputFunc,
+              std::array<TInput, N> inputArray,
+              TResult inputResult)
+          : name(std::move(inputName))
+          , func(std::move(inputFunc))
+          , inputVars(inputArray)
+          , intendedResult(inputResult)
+          , pass(false)
+          , ran(false)
+      {}
+};
+
+
+// ─── TeeBuf ───────────────────────────────────────────────────────────────────
 class TeeBuf : public std::streambuf {
   private:
       std::streambuf* original;
@@ -12,7 +65,6 @@ class TeeBuf : public std::streambuf {
   protected:
       int overflow(int c) override {
           if (c == EOF) return !EOF;
-
           capture.put((char)c);
           return original->sputc(c);
       }
@@ -20,9 +72,7 @@ class TeeBuf : public std::streambuf {
   public:
       TeeBuf(std::streambuf* orig) : original(orig) {}
 
-      std::string getCaptured() const {
-          return capture.str();
-      }
+      std::string getCaptured() const { return capture.str(); }
 
       void clear() {
           capture.str("");
@@ -36,6 +86,7 @@ void initCoutCapture() {
     tee = new TeeBuf(std::cout.rdbuf());
     std::cout.rdbuf(tee);
 }
+
 
 // ─── Create Queue Page ────────────────────────────────────────────────────────
 // Route: GET /admin/create-queue
@@ -208,25 +259,21 @@ static inline std::string createQueuePage(const std::string& username, const std
     document.getElementById('createQueueForm').addEventListener('submit', function(e) {
       let valid = true;
 
-      // Reset all errors
       document.querySelectorAll('.field-error').forEach(el => el.classList.remove('visible'));
       document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
 
-      // Validate Service Name
       const name = document.getElementById('serviceName');
       if (!name.value.trim() || name.value.trim().length > 100) {
         showError('serviceName', 'serviceNameErr');
         valid = false;
       }
 
-      // Validate Description
       const desc = document.getElementById('description');
       if (!desc.value.trim()) {
         showError('description', 'descriptionErr');
         valid = false;
       }
 
-      // Validate Duration
       const dur = document.getElementById('duration');
       const durVal = parseInt(dur.value, 10);
       if (!dur.value || isNaN(durVal) || durVal < 1 || durVal > 480) {
@@ -234,7 +281,6 @@ static inline std::string createQueuePage(const std::string& username, const std
         valid = false;
       }
 
-      // Validate Priority (radio — always has a default, but guard anyway)
       const priority = document.querySelector('input[name="priority"]:checked');
       if (!priority) {
         document.getElementById('priorityErr').classList.add('visible');
@@ -249,17 +295,16 @@ static inline std::string createQueuePage(const std::string& username, const std
 )HTML";
 }
 
+
 // ─── Admin Dashboard Page ─────────────────────────────────────────────────────
 // Route: GET /admin-dashboard
 static inline std::string adminDashboardPage(const std::string& username) {
-  // Grab and split captured cout output into log lines
     std::string rawLogs = tee ? tee->getCaptured() : "";
     std::string logHtml;
     std::istringstream stream(rawLogs);
     std::string line;
     while (std::getline(stream, line)) {
         if (!line.empty()) {
-            // Basic HTML escaping for safety
             std::string escaped;
             for (char c : line) {
                 if      (c == '<') escaped += "&lt;";
@@ -303,116 +348,48 @@ static inline std::string adminDashboardPage(const std::string& username) {
     .pill.open { background:#dcfce7; color:#166534; }
     .pill.closed { background:#fee2e2; color:#991b1b; }
 
-    .log { background: #0b1220; color:#e5e7eb; padding: 14px; border-radius: 12px; height: 260px; overflow:auto;
+    .log-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .log { background: #0b1220; color:#e5e7eb; padding: 14px; border-radius: 12px; height: 220px; overflow:auto;
            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono"; font-size: 12px; }
     .log div { margin-bottom: 8px; }
     .topbar { display:flex; justify-content:space-between; align-items:center; margin-top: 16px; }
 
+    .btn-tests { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:7px;
+                 background:#1e1b4b; color:#a5b4fc; border:1px solid #3730a3; font-size:12px;
+                 cursor:pointer; text-decoration:none; font-family:inherit; }
+    .btn-tests:hover { background:#312e81; color:#c7d2fe; }
+    .btn-tests svg { flex-shrink:0; }
+
     /* Modal Overlay */
     .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 1000;
+      align-items: center; justify-content: center;
     }
     .modal-overlay.active { display: flex; }
-
-    /* Modal Box */
     .modal {
-      background: white;
-      border-radius: 16px;
-      width: 480px;
-      max-width: 95vw;
-      max-height: 80vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
-      overflow: hidden;
+      background: white; border-radius: 16px; width: 480px;
+      max-width: 95vw; max-height: 80vh; display: flex;
+      flex-direction: column; box-shadow: 0 8px 40px rgba(0,0,0,0.18); overflow: hidden;
     }
-    .modal-header {
-      padding: 18px 20px 14px;
-      border-bottom: 1px solid #e5e7eb;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .modal-header { padding: 18px 20px 14px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
     .modal-header h2 { margin: 0; font-size: 16px; }
-    .modal-close {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 20px;
-      color: #6b7280;
-      line-height: 1;
-      padding: 0 4px;
-    }
+    .modal-close { background: none; border: none; cursor: pointer; font-size: 20px; color: #6b7280; line-height: 1; padding: 0 4px; }
     .modal-close:hover { color: #111827; }
     .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
-    .modal-footer {
-      padding: 12px 20px;
-      border-top: 1px solid #e5e7eb;
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
+    .modal-footer { padding: 12px 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; }
 
-    /* Queue list */
     .queue-list { list-style: none; margin: 0; padding: 0; }
-    .queue-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      background: #fff;
-      cursor: grab;
-      user-select: none;
-      transition: box-shadow 0.15s, background 0.15s;
-    }
+    .queue-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 8px; background: #fff; cursor: grab; user-select: none; transition: box-shadow 0.15s, background 0.15s; }
     .queue-item:active { cursor: grabbing; }
-    .queue-item.dragging {
-      opacity: 0.4;
-    }
-    .queue-item.drag-over {
-      border-color: #6366f1;
-      background: #eef2ff;
-      box-shadow: 0 0 0 2px #6366f1;
-    }
-    .drag-handle {
-      color: #9ca3af;
-      font-size: 16px;
-      cursor: grab;
-      flex-shrink: 0;
-    }
-    .queue-position {
-      width: 24px;
-      height: 24px;
-      background: #111827;
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
+    .queue-item.dragging { opacity: 0.4; }
+    .queue-item.drag-over { border-color: #6366f1; background: #eef2ff; box-shadow: 0 0 0 2px #6366f1; }
+    .drag-handle { color: #9ca3af; font-size: 16px; cursor: grab; flex-shrink: 0; }
+    .queue-position { width: 24px; height: 24px; background: #111827; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
     .queue-info { flex: 1; }
     .queue-name { font-weight: 600; font-size: 14px; }
     .queue-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
-    .queue-wait {
-      font-size: 12px;
-      color: #374151;
-      background: #f3f4f6;
-      padding: 3px 8px;
-      border-radius: 999px;
-      white-space: nowrap;
-    }
+    .queue-wait { font-size: 12px; color: #374151; background: #f3f4f6; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
     .drag-hint { font-size: 12px; color: #9ca3af; margin-bottom: 12px; }
   </style>
 </head>
@@ -446,16 +423,13 @@ static inline std::string adminDashboardPage(const std::string& username) {
 
         <table>
           <thead>
-            <tr>
-              <th>Queue</th><th>Status</th><th>Waiting</th><th>Avg Wait</th><th>Actions</th>
-            </tr>
+            <tr><th>Queue</th><th>Status</th><th>Waiting</th><th>Avg Wait</th><th>Actions</th></tr>
           </thead>
           <tbody>
             <tr>
               <td>Advising</td>
               <td><span class="pill open">Open</span></td>
-              <td>5</td>
-              <td>12 min</td>
+              <td>5</td><td>12 min</td>
               <td>
                 <button class="btn serve" onclick="serveNext('Advising')">Serve Next</button>
                 <button class="btn" onclick="openQueueModal('Advising')">View</button>
@@ -466,8 +440,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
             <tr>
               <td>Tutoring</td>
               <td><span class="pill open">Open</span></td>
-              <td>4</td>
-              <td>9 min</td>
+              <td>4</td><td>9 min</td>
               <td>
                 <button class="btn serve" onclick="serveNext('Tutoring')">Serve Next</button>
                 <button class="btn" onclick="openQueueModal('Tutoring')">View</button>
@@ -478,8 +451,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
             <tr>
               <td>Tech Support</td>
               <td><span class="pill closed">Closed</span></td>
-              <td>2</td>
-              <td>—</td>
+              <td>2</td><td>—</td>
               <td>
                 <button class="btn serve" onclick="serveNext('Tech Support')">Serve Next</button>
                 <button class="btn" onclick="openQueueModal('Tech Support')">View</button>
@@ -491,13 +463,25 @@ static inline std::string adminDashboardPage(const std::string& username) {
         </table>
       </div>
 
+      <!-- ── System Log widget ── -->
       <div class="card">
-          <div style="font-weight:700;">System Log</div>
-          <div class="muted" style="margin-bottom:10px;">Live cout output</div>
-          <div class="log" id="systemLog">
-          )HTML" + logHtml + R"HTML(
+        <div class="log-header">
+          <div>
+            <div style="font-weight:700;">System Log</div>
+            <div class="muted">Live cout output</div>
           </div>
+          <!-- Unit Tests button -->
+          <a href="/admin/unit-tests" class="btn-tests">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Unit Tests
+          </a>
         </div>
+        <div class="log" id="systemLog">
+          )HTML" + logHtml + R"HTML(
+        </div>
+      </div>
     </div>
 
     <div class="card" style="margin-top:16px;">
@@ -505,9 +489,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
       <div class="muted" style="margin-bottom:10px;">Static table for now</div>
       <table>
         <thead>
-          <tr>
-            <th>User</th><th>Role</th><th>Last Login</th><th>Actions</th>
-          </tr>
+          <tr><th>User</th><th>Role</th><th>Last Login</th><th>Actions</th></tr>
         </thead>
         <tbody>
           <tr>
@@ -525,7 +507,6 @@ static inline std::string adminDashboardPage(const std::string& username) {
         </tbody>
       </table>
     </div>
-
   </div>
 
   <!-- Queue View Modal -->
@@ -547,24 +528,23 @@ static inline std::string adminDashboardPage(const std::string& username) {
   </div>
 
   <script>
-    // Static user data per queue
     const queueData = {
       'Advising': [
-        { name: 'Alice Johnson',    reason: 'Course registration help',  waited: '2 min' },
-        { name: 'Bob Smith',        reason: 'Degree audit question',      waited: '7 min' },
-        { name: 'Carol Williams',   reason: 'Transfer credit inquiry',    waited: '13 min' },
-        { name: 'David Lee',        reason: 'Scholarship advising',       waited: '18 min' },
-        { name: 'Eva Martinez',     reason: 'General advising',           waited: '24 min' },
+        { name: 'Alice Johnson',  reason: 'Course registration help', waited: '2 min'  },
+        { name: 'Bob Smith',      reason: 'Degree audit question',     waited: '7 min'  },
+        { name: 'Carol Williams', reason: 'Transfer credit inquiry',   waited: '13 min' },
+        { name: 'David Lee',      reason: 'Scholarship advising',      waited: '18 min' },
+        { name: 'Eva Martinez',   reason: 'General advising',          waited: '24 min' },
       ],
       'Tutoring': [
-        { name: 'Frank Brown',      reason: 'Calculus II help',           waited: '3 min' },
-        { name: 'Grace Kim',        reason: 'Python debugging',           waited: '9 min' },
-        { name: 'Henry Davis',      reason: 'Linear algebra review',      waited: '15 min' },
-        { name: 'Isla Thompson',    reason: 'Essay feedback',             waited: '20 min' },
+        { name: 'Frank Brown',  reason: 'Calculus II help',       waited: '3 min'  },
+        { name: 'Grace Kim',    reason: 'Python debugging',        waited: '9 min'  },
+        { name: 'Henry Davis',  reason: 'Linear algebra review',   waited: '15 min' },
+        { name: 'Isla Thompson',reason: 'Essay feedback',          waited: '20 min' },
       ],
       'Tech Support': [
-        { name: 'Jack Wilson',      reason: 'VPN setup issue',            waited: '5 min' },
-        { name: 'Karen Moore',      reason: 'Printer not working',        waited: '11 min' },
+        { name: 'Jack Wilson', reason: 'VPN setup issue',       waited: '5 min'  },
+        { name: 'Karen Moore', reason: 'Printer not working',   waited: '11 min' },
       ],
     };
 
@@ -616,10 +596,10 @@ static inline std::string adminDashboardPage(const std::string& username) {
           <span class="queue-wait">Waited ${user.waited}</span>
         `;
         li.addEventListener('dragstart', onDragStart);
-        li.addEventListener('dragover', onDragOver);
+        li.addEventListener('dragover',  onDragOver);
         li.addEventListener('dragleave', onDragLeave);
-        li.addEventListener('drop', onDrop);
-        li.addEventListener('dragend', onDragEnd);
+        li.addEventListener('drop',      onDrop);
+        li.addEventListener('dragend',   onDragEnd);
         list.appendChild(li);
       });
     }
@@ -629,37 +609,28 @@ static inline std::string adminDashboardPage(const std::string& username) {
       this.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
     }
-
     function onDragOver(e) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       this.classList.add('drag-over');
     }
-
-    function onDragLeave() {
-      this.classList.remove('drag-over');
-    }
-
+    function onDragLeave() { this.classList.remove('drag-over'); }
     function onDrop(e) {
       e.preventDefault();
       const destIndex = parseInt(this.dataset.index);
       if (dragSrcIndex === null || dragSrcIndex === destIndex) return;
-
       const users = queueData[currentQueue];
       const [moved] = users.splice(dragSrcIndex, 1);
       users.splice(destIndex, 0, moved);
       renderQueueList();
     }
-
     function onDragEnd() {
       document.querySelectorAll('.queue-item').forEach(el => {
         el.classList.remove('dragging', 'drag-over');
       });
       dragSrcIndex = null;
     }
-
     function saveQueueOrder() {
-      // Placeholder: in a real implementation this would POST the new order to the server
       alert('Queue order saved! (UI placeholder — no server call made)');
       closeQueueModal();
     }
@@ -668,4 +639,320 @@ static inline std::string adminDashboardPage(const std::string& username) {
 </html>
 )HTML";
 }
-#endif
+
+
+// ─── Unit Tests Page ──────────────────────────────────────────────────────────
+// Route: GET /admin/unit-tests
+static inline std::string unitTestsPage(
+    const std::string& username,
+    const std::vector<UnitTestBase*>& tests)
+{
+    std::string cardsHtml;
+    for (std::size_t i = 0; i < tests.size(); ++i) {
+        // Escape the test name for HTML
+        std::string safeName;
+        for (char c : tests[i]->getName()) {
+            if      (c == '<') safeName += "&lt;";
+            else if (c == '>') safeName += "&gt;";
+            else if (c == '&') safeName += "&amp;";
+            else if (c == '"') safeName += "&quot;";
+            else               safeName += c;
+        }
+
+        const std::string idx = std::to_string(i);
+
+        cardsHtml += R"HTML(
+        <div class="test-card" id="card-)HTML" + idx + R"HTML(">
+          <div class="test-left">
+            <span class="test-index">)HTML" + idx + R"HTML(</span>
+            <span class="test-name">)HTML" + safeName + R"HTML(</span>
+          </div>
+          <div class="test-right">
+            <div class="indicator" id="indicator-)HTML" + idx + R"HTML(" data-state="untested">
+              <span class="dot"></span>
+              <span class="ind-label">Not Tested</span>
+            </div>
+            <button class="run-btn" id="btn-)HTML" + idx + R"HTML(" onclick="runTest()HTML" + idx + R"HTML()">
+              Run
+            </button>
+          </div>
+        </div>
+)HTML";
+    }
+
+    if (cardsHtml.empty()) {
+        cardsHtml = R"HTML(
+        <div style="text-align:center; padding:40px; color:#6b7280; font-size:14px;">
+          No unit tests registered. Add tests to your vector in main.cpp.
+        </div>
+)HTML";
+    }
+
+    const std::string totalTests = std::to_string(tests.size());
+
+    return R"HTML(
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Unit Tests — Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; color: #111827; }
+
+    /* ── Header ── */
+    header {
+      background: #111827; color: white;
+      padding: 16px 24px; display: flex;
+      justify-content: space-between; align-items: center;
+    }
+    header a { color: #c7d2fe; text-decoration: none; margin-left: 12px; }
+
+    /* ── Layout ── */
+    .container { padding: 24px; max-width: 860px; margin: 0 auto; }
+
+    /* ── Summary bar ── */
+    .summary {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 12px; margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white; border-radius: 10px;
+      padding: 14px 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+      border-top: 3px solid transparent;
+    }
+    .stat-card.total  { border-color: #6366f1; }
+    .stat-card.passed { border-color: #16a34a; }
+    .stat-card.failed { border-color: #dc2626; }
+    .stat-card.pending{ border-color: #d97706; }
+    .stat-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; }
+    .stat-value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+    .stat-card.total   .stat-value { color: #4f46e5; }
+    .stat-card.passed  .stat-value { color: #15803d; }
+    .stat-card.failed  .stat-value { color: #b91c1c; }
+    .stat-card.pending .stat-value { color: #b45309; }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+    }
+    .toolbar h2 { margin: 0; font-size: 16px; }
+    .toolbar-actions { display: flex; gap: 8px; }
+
+    .btn {
+      padding: 7px 14px; border-radius: 8px; border: 1px solid #e5e7eb;
+      background: #fff; cursor: pointer; font-size: 13px; font-family: inherit;
+      transition: background 0.12s;
+    }
+    .btn:hover { background: #f3f4f6; }
+    .btn.primary { background: #111827; color: white; border-color: #111827; }
+    .btn.primary:hover { background: #1f2937; }
+    .btn.run-all { background: #4f46e5; color: white; border-color: #4338ca; }
+    .btn.run-all:hover { background: #4338ca; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Test cards ── */
+    .tests-container {
+      background: white; border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06); overflow: hidden;
+    }
+    .test-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; border-bottom: 1px solid #f3f4f6;
+      transition: background 0.12s;
+    }
+    .test-card:last-child { border-bottom: none; }
+    .test-card:hover { background: #fafafa; }
+
+    .test-left { display: flex; align-items: center; gap: 12px; }
+    .test-index {
+      width: 26px; height: 26px; background: #f3f4f6; color: #374151;
+      border-radius: 6px; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+      font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+    }
+    .test-name { font-size: 14px; font-weight: 500; color: #111827; }
+
+    .test-right { display: flex; align-items: center; gap: 12px; }
+
+    /* ── Indicator ── */
+    .indicator {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px; font-size: 12px;
+      font-weight: 600; transition: all 0.25s; min-width: 100px;
+      justify-content: center;
+    }
+    .indicator .dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      transition: background 0.25s;
+    }
+
+    /* untested */
+    .indicator[data-state="untested"] {
+      background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb;
+    }
+    .indicator[data-state="untested"] .dot { background: #9ca3af; }
+
+    /* pass */
+    .indicator[data-state="pass"] {
+      background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;
+    }
+    .indicator[data-state="pass"] .dot { background: #16a34a; }
+
+    /* fail */
+    .indicator[data-state="fail"] {
+      background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+    }
+    .indicator[data-state="fail"] .dot { background: #dc2626; }
+
+    /* running (spinner-like pulse) */
+    .indicator[data-state="running"] {
+      background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+    }
+    .indicator[data-state="running"] .dot {
+      background: #3b82f6;
+      animation: pulse 0.8s ease-in-out infinite alternate;
+    }
+    @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
+
+    /* ── Run button ── */
+    .run-btn {
+      padding: 5px 14px; border-radius: 7px; border: 1px solid #e5e7eb;
+      background: #fff; cursor: pointer; font-size: 12px; font-weight: 600;
+      font-family: inherit; color: #374151; transition: all 0.12s;
+    }
+    .run-btn:hover:not(:disabled) { background: #111827; color: white; border-color: #111827; }
+    .run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Empty state ── */
+    .empty { text-align:center; padding:40px; color:#6b7280; font-size:14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <strong>Admin Dashboard</strong>
+      <span style="color:#9ca3af; font-size:12px;"> / Unit Tests</span>
+    </div>
+    <div>
+      <span style="color:#9ca3af; font-size:12px;">Signed in as</span>
+      <strong>)HTML" + username + R"HTML(</strong>
+      <a href="/admin-dashboard">Dashboard</a>
+      <a href="/">Home</a>
+      <a href="/login">Logout</a>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Summary Bar -->
+    <div class="summary">
+      <div class="stat-card total">
+        <div class="stat-label">Total</div>
+        <div class="stat-value" id="statTotal">)HTML" + totalTests + R"HTML(</div>
+      </div>
+      <div class="stat-card passed">
+        <div class="stat-label">Passed</div>
+        <div class="stat-value" id="statPassed">0</div>
+      </div>
+      <div class="stat-card failed">
+        <div class="stat-label">Failed</div>
+        <div class="stat-value" id="statFailed">0</div>
+      </div>
+      <div class="stat-card pending">
+        <div class="stat-label">Not Tested</div>
+        <div class="stat-value" id="statPending">)HTML" + totalTests + R"HTML(</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <h2>Test Suite <span style="color:#6b7280; font-weight:400; font-size:13px;">
+        — )HTML" + totalTests + R"HTML( test(s) registered</span>
+      </h2>
+      <div class="toolbar-actions">
+        <button class="btn" onclick="resetAll()">Reset All</button>
+        <button class="btn run-all" onclick="runAll()">&#9654;&nbsp; Run All</button>
+      </div>
+    </div>
+
+    <!-- Test Cards -->
+    <div class="tests-container" id="testsContainer">
+)HTML" + cardsHtml + R"HTML(
+    </div>
+  </div>
+
+  <script>
+    const TOTAL = )HTML" + totalTests + R"HTML(;
+
+    // State map: index -> 'untested' | 'pass' | 'fail' | 'running'
+    const states = {};
+    for (let i = 0; i < TOTAL; i++) states[i] = 'untested';
+
+    const labelText = {
+      untested: 'Not Tested',
+      pass:     'Pass',
+      fail:     'Fail',
+      running:  'Running…',
+    };
+
+    function setIndicator(idx, state) {
+      states[idx] = state;
+      const ind = document.getElementById('indicator-' + idx);
+      if (!ind) return;
+      ind.setAttribute('data-state', state);
+      ind.querySelector('.ind-label').textContent = labelText[state] || state;
+      updateSummary();
+    }
+
+    function updateSummary() {
+      let passed = 0, failed = 0, pending = 0;
+      for (let i = 0; i < TOTAL; i++) {
+        if      (states[i] === 'pass')     passed++;
+        else if (states[i] === 'fail')     failed++;
+        else if (states[i] === 'untested') pending++;
+      }
+      document.getElementById('statPassed').textContent  = passed;
+      document.getElementById('statFailed').textContent  = failed;
+      document.getElementById('statPending').textContent = pending;
+    }
+
+    async function runTest(idx) {
+      const btn = document.getElementById('btn-' + idx);
+      btn.disabled = true;
+      setIndicator(idx, 'running');
+
+      try {
+        const res = await fetch('/admin/unit-tests/run/' + idx, { method: 'POST' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();          // expects { "pass": true|false }
+        setIndicator(idx, data.pass ? 'pass' : 'fail');
+      } catch (err) {
+        console.error('Test run error:', err);
+        setIndicator(idx, 'fail');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function runAll() {
+      for (let i = 0; i < TOTAL; i++) {
+        await runTest(i);
+      }
+    }
+
+    function resetAll() {
+      for (let i = 0; i < TOTAL; i++) {
+        setIndicator(i, 'untested');
+        const btn = document.getElementById('btn-' + i);
+        if (btn) btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
+)HTML";
+}
+
+#endif  // ADMIN_H
