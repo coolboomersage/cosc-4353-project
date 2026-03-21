@@ -1,2 +1,3 @@
 build/
-serverExe/
+serverExe/.DS_Store
+cpp-httplib-0.15.3/
