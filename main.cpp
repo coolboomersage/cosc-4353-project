@@ -475,6 +475,32 @@ tests.push_back(new UnitTest<bool, std::string, 1>(
         res.set_content(html, "text/html");
     });
 
+    //check for the database, if it is not found crate it
+    sqlite3* db;
+    std::string exeDir = getExecutableDirectory();
+    std::string dbPath = exeDir + "/QueuesmartDatabase.db";
+    std::cout << "Attempting to open database at: " << dbPath << std::endl;
+    bool dbExists = std::ifstream(dbPath).good();
+
+    if (!dbExists) {
+        std::cout << "No database found, creating default" << std::endl;
+
+        // Open (and create) the database file BEFORE passing it anywhere
+        if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
+            std::cout << "Failed to open database: " << sqlite3_errmsg(db) << std::endl;
+            sqlite3_close(db);
+            return -1;
+        }
+
+        if (!initDatabase(db)) {
+            std::cout << "Failed to initialize database." << std::endl;
+        }
+
+        sqlite3_close(db);
+    } else {
+        std::cout << "Pre-existing database found" << std::endl;
+    }
+
     std::cout << "Server running at http://localhost:8080\n";
     server.listen("127.0.0.1", 8080);
 }
