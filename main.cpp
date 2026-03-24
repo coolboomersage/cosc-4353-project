@@ -23,6 +23,38 @@ int main() {
         true
     ));
 
+    // Additional Test
+    tests.push_back(new UnitTest<bool, std::string, 1>(
+    "email fail no at",
+    [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+    {"cbsabc.cc"},
+    false
+));
+
+tests.push_back(new UnitTest<bool, std::string, 1>(
+    "email fail no suffix",
+    [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+    {"cbs@abc"},
+    false
+));
+
+tests.push_back(new UnitTest<bool, std::string, 1>(
+    "email fail spaces",
+    [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+    {"cbs @abc.cc"},
+    false
+));
+
+tests.push_back(new UnitTest<bool, std::string, 1>(
+    "email pass subdomain",
+    [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+    {"me@test.school.edu"},
+    true
+));
+    // Test End
+
+    
+
     // Handler functions
     auto handleCalendar = [](const httplib::Request&, httplib::Response& res) {
         res.set_content(calenderPageData(), "text/html");
