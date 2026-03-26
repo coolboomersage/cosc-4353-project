@@ -8,6 +8,8 @@
 #include "sub pages/join_queue.h"
 #include "sub pages/queues.h"
 #include "sub pages/user_dashboard.h"
+#include "sub pages/service_management.h"
+#include "sub pages/queue_management.h"
 
 
 int main() {
