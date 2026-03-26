@@ -8,11 +8,35 @@
 #include "sub pages/join_queue.h"
 #include "sub pages/queues.h"
 #include "sub pages/user_dashboard.h"
+#include "sub pages/service_management.h"
+#include "sub pages/queue_management.h"
 
 
 int main() {
     initCoutCapture(); // start cout capture for admin panel
     httplib::Server server;
+
+    sqlite3* db = nullptr;
+    std::string exeDir = getExecutableDirectory();
+    std::string dbPath = exeDir + "/QueuesmartDatabase.db";
+    std::cout << "Attempting to open database at: " << dbPath << std::endl;
+
+    bool dbExists = std::ifstream(dbPath).good();
+
+    if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
+        std::cout << "Failed to open database: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return -1;
+}
+
+    if (!dbExists) {
+        std::cout << "No database found, creating default" << std::endl;
+        if (!initDatabase(db)) {
+            std::cout << "Failed to initialize database." << std::endl;
+    }
+}     else {
+        std::cout << "Pre-existing database found" << std::endl;
+}
 
     //unitTest vector defined for use in the admin panel for unit testing
     std::vector<UnitTestBase*> tests;
@@ -150,6 +174,85 @@ tests.push_back(new UnitTest<bool, std::string, 1>(
         }
         res.set_content(response.dump(), "application/json");
     });
+
+    server.Get("/api/services", [&](const httplib::Request&, httplib::Response& res) {
+        auto services = getAllServices(db);
+        res.set_content(servicesToJson(services).dump(), "application/json");
+    });
+    
+    server.Post("/api/services/add", [&](const httplib::Request& req, httplib::Response& res) {
+        auto json = nlohmann::json::parse(req.body);
+        std::string message;
+        bool success = addService(db, json["name"], json["estimatedServiceTime"], message);
+    
+        nlohmann::json response;
+        response["success"] = success;
+        response["message"] = message;
+        res.set_content(response.dump(), "application/json");
+    });
+    
+    server.Post("/api/services/update", [&](const httplib::Request& req, httplib::Response& res) {
+        auto json = nlohmann::json::parse(req.body);
+        std::string message;
+        bool success = updateService(db, json["id"], json["name"], json["estimatedServiceTime"], message);
+    
+        nlohmann::json response;
+        response["success"] = success;
+        response["message"] = message;
+        res.set_content(response.dump(), "application/json");
+    });
+    
+    server.Post("/api/services/delete", [&](const httplib::Request& req, httplib::Response& res) {
+        auto json = nlohmann::json::parse(req.body);
+        std::string message;
+        bool success = deleteService(db, json["id"], message);
+    
+        nlohmann::json response;
+        response["success"] = success;
+        response["message"] = message;
+        res.set_content(response.dump(), "application/json");
+    });
+    
+    server.Get(R"(/api/queue/(\d+))", [&](const httplib::Request& req, httplib::Response& res) {
+        int serviceId = std::stoi(req.matches[1]);
+        auto entries = getQueueByService(db, serviceId);
+        res.set_content(queueToJson(entries).dump(), "application/json");
+    });
+    
+    server.Post("/api/queue/add", [&](const httplib::Request& req, httplib::Response& res) {
+        auto json = nlohmann::json::parse(req.body);
+        std::string message;
+        bool success = addToQueue(db, json["serviceId"], json["name"], json["reason"], message);
+    
+        nlohmann::json response;
+        response["success"] = success;
+        response["message"] = message;
+        res.set_content(response.dump(), "application/json");
+    });
+    
+    server.Post("/api/queue/remove", [&](const httplib::Request& req, httplib::Response& res) {
+        auto json = nlohmann::json::parse(req.body);
+        std::string message;
+        bool success = removeFromQueue(db, json["queueId"], message);
+    
+        nlohmann::json response;
+        response["success"] = success;
+        response["message"] = message;
+        res.set_content(response.dump(), "application/json");
+    });
+    
+    server.Post("/api/queue/serve-next", [&](const httplib::Request& req, httplib::Response& res) {
+        auto json = nlohmann::json::parse(req.body);
+        std::string servedName, message;
+        bool success = serveNextInQueue(db, json["serviceId"], servedName, message);
+    
+        nlohmann::json response;
+        response["success"] = success;
+        response["message"] = message;
+        response["servedName"] = servedName;
+        res.set_content(response.dump(), "application/json");
+    });
+
 
     server.Get("/admin/unit-tests", [&](const httplib::Request& req, httplib::Response& res) {
         const std::string username = "admin"; //placeholder
@@ -475,32 +578,9 @@ tests.push_back(new UnitTest<bool, std::string, 1>(
         res.set_content(html, "text/html");
     });
 
-    //check for the database, if it is not found crate it
-    sqlite3* db;
-    std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + "/QueuesmartDatabase.db";
-    std::cout << "Attempting to open database at: " << dbPath << std::endl;
-    bool dbExists = std::ifstream(dbPath).good();
-
-    if (!dbExists) {
-        std::cout << "No database found, creating default" << std::endl;
-
-        // Open (and create) the database file BEFORE passing it anywhere
-        if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
-            std::cout << "Failed to open database: " << sqlite3_errmsg(db) << std::endl;
-            sqlite3_close(db);
-            return -1;
-        }
-
-        if (!initDatabase(db)) {
-            std::cout << "Failed to initialize database." << std::endl;
-        }
-
-        sqlite3_close(db);
-    } else {
-        std::cout << "Pre-existing database found" << std::endl;
-    }
 
     std::cout << "Server running at http://localhost:8080\n";
     server.listen("127.0.0.1", 8080);
+    
+    sqlite3_close(db);
 }
