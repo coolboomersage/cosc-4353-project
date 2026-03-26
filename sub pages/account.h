@@ -125,7 +125,7 @@ LoginResult checkCredentials(const std::string& username, const std::string& pas
     int rc;
 
     std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + "/QueuesmartDatabase.db";
+    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
 
     std::cout << "Attempting to open database at: " << dbPath << std::endl;
 
@@ -197,7 +197,7 @@ CreateAccountResult createAccount(const std::string& email, const std::string& p
     char* errMsg = nullptr;
 
     std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + "/accounts.db";
+    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
     
     rc = sqlite3_open(dbPath.c_str(), &db);
     
@@ -285,7 +285,7 @@ std::string getUsernameById(int userId) {
     std::string username = "";
 
     std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + "/accounts.db";
+    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
     
     rc = sqlite3_open(dbPath.c_str(), &db);
     
@@ -326,7 +326,7 @@ int getAuthLevelById(int userId) {
     int authLevel = 0;
 
     std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + "/accounts.db";
+    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
     
     rc = sqlite3_open(dbPath.c_str(), &db);
     

@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <iostream>
 
+#define DATABASE_FILE_LOCATION "/QueuesmartDatabase.db"
+
 std::string hashPassword(const std::string& password) {
     const uint32_t HASH_LEN = 32;
     const uint32_t SALT_LEN = 16;
