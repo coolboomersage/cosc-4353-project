@@ -558,7 +558,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
         return;
       }
       const next = users.shift();
-      alert('Now serving: ' + next.name + '\nReason: ' + next.reason + '\n\n(UI placeholder — no server call made)');
+      alert('Now serving: ' + next.name + '\nReason: ' + next.reason + '\n\n(change not saved to DB, only local)');
     }
 
     function openQueueModal(queueName) {
@@ -631,7 +631,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
       dragSrcIndex = null;
     }
     function saveQueueOrder() {
-      alert('Queue order saved! (UI placeholder — no server call made)');
+      alert('Queue order saved! (no databse call made, change is only local)');
       closeQueueModal();
     }
   </script>
