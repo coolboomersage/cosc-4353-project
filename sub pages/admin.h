@@ -397,7 +397,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
   <header>
     <div><strong>Admin Dashboard</strong> <span class="muted" style="color:#9ca3af;">(UI placeholders)</span></div>
     <div>
-      <span class="muted" style="color:#9ca3af;">Signed in as</span> <strong>)" + username + R"HTML(</strong>
+      <span class="muted" style="color:#9ca3af;">Signed in as</span> <strong>)HTML" + username + R"HTML(</strong>
       <a href="/">Home</a>
       <a href="/login">Logout</a>
     </div>

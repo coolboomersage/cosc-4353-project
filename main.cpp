@@ -18,7 +18,7 @@ int main() {
 
     sqlite3* db = nullptr;
     std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + "/QueuesmartDatabase.db";
+    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
     std::cout << "Attempting to open database at: " << dbPath << std::endl;
 
     bool dbExists = std::ifstream(dbPath).good();
