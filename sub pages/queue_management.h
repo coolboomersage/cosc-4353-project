@@ -230,11 +230,16 @@ inline nlohmann::json queueToJson(const std::vector<QueueEntry>& entries) {
 }
 
 inline int estimateWaitTimeForUser(sqlite3* db, int serviceId, int queueId) {
+    int estimatedServiceTime = getEstimatedServiceTime(db, serviceId);
+    if (estimatedServiceTime <= 0) {
+        return -1;
+    }
+
     auto queue = getQueueByService(db, serviceId);
 
-    for (const auto& entry : queue) {
-        if (entry.id == queueId) {
-            return entry.waitTime;
+    for (size_t i = 0; i < queue.size(); i++) {
+        if (queue[i].id == queueId) {
+            return static_cast<int>(i) * estimatedServiceTime;
         }
     }
 
