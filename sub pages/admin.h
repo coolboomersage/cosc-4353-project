@@ -80,11 +80,11 @@ class TeeBuf : public std::streambuf {
       }
 };
 
-TeeBuf* teeBuf;
+TeeBuf* tee;
 
 void initCoutCapture() {
-    teeBuf = new TeeBuf(std::cout.rdbuf());
-    std::cout.rdbuf(teeBuf);
+    tee = new TeeBuf(std::cout.rdbuf());
+    std::cout.rdbuf(tee);
 }
 
 
@@ -299,7 +299,7 @@ static inline std::string createQueuePage(const std::string& username, const std
 // ─── Admin Dashboard Page ─────────────────────────────────────────────────────
 // Route: GET /admin-dashboard
 static inline std::string adminDashboardPage(const std::string& username) {
-    std::string rawLogs = teeBuf ? teeBuf->getCaptured() : "";
+    std::string rawLogs = tee ? tee->getCaptured() : "";
     std::string logHtml;
     std::istringstream stream(rawLogs);
     std::string line;
