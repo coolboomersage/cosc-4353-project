@@ -253,6 +253,26 @@ tests.push_back(new UnitTest<bool, std::string, 1>(
         res.set_content(response.dump(), "application/json");
     });
 
+    server.Get(R"(/api/queue/wait-time/(\d+)/(\d+))", [&](const httplib::Request& req, httplib::Response& res) {
+        int serviceId = std::stoi(req.matches[1]);
+        int queueId = std::stoi(req.matches[2]);
+
+        int waitTime = estimateWaitTimeForUser(db, serviceId, queueId);
+
+        nlohmann::json response;
+
+        if (waitTime == -1) {
+            res.status = 404;
+            response["success"] = false;
+            response["message"] = "Queue entry not found.";
+        } else {
+            response["success"] = true;
+            response["estimatedWaitMinutes"] = waitTime;
+        }
+
+        res.set_content(response.dump(), "application/json");
+    });
+
 
     server.Get("/admin/unit-tests", [&](const httplib::Request& req, httplib::Response& res) {
         const std::string username = "admin"; //placeholder
