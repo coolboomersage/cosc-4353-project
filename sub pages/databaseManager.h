@@ -94,6 +94,7 @@ bool initDatabase(sqlite3* db) {
         "CREATE TABLE IF NOT EXISTS queue ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "service_id INTEGER NOT NULL, "
+        "position INTEGER NOT NULL, "
         "name TEXT NOT NULL, "
         "reason TEXT NOT NULL, "
         "wait_time INTEGER NOT NULL, "  // in minutes
@@ -135,21 +136,21 @@ bool initDatabase(sqlite3* db) {
 
     // Seed queue table — relies on services being inserted with IDs 1, 2, 3
     const char* insertQueueSQL =
-        "INSERT INTO queue (service_id, name, reason, wait_time) VALUES "
+        "INSERT INTO queue (service_id, position, name, reason, wait_time) VALUES "
         // Advising (service_id = 1)
-        "(1, 'Alice Johnson',  'Course registration help', 2),  "
-        "(1, 'Bob Smith',      'Degree audit question',     7),  "
-        "(1, 'Carol Williams', 'Transfer credit inquiry',   13), "
-        "(1, 'David Lee',      'Scholarship advising',      18), "
-        "(1, 'Eva Martinez',   'General advising',          24), "
+        "(1, 1, 'Alice Johnson',  'Course registration help', 2),  "
+        "(1, 2, 'Bob Smith',      'Degree audit question',    7),  "
+        "(1, 3, 'Carol Williams', 'Transfer credit inquiry',  13), "
+        "(1, 4, 'David Lee',      'Scholarship advising',     18), "
+        "(1, 5, 'Eva Martinez',   'General advising',         24), "
         // Tutoring (service_id = 2)
-        "(2, 'Frank Brown',   'Calculus II help',       3),  "
-        "(2, 'Grace Kim',     'Python debugging',        9),  "
-        "(2, 'Henry Davis',   'Linear algebra review',   15), "
-        "(2, 'Isla Thompson', 'Essay feedback',          20), "
+        "(2, 1, 'Frank Brown',   'Calculus II help',      3),  "
+        "(2, 2, 'Grace Kim',     'Python debugging',      9),  "
+        "(2, 3, 'Henry Davis',   'Linear algebra review', 15), "
+        "(2, 4, 'Isla Thompson', 'Essay feedback',        20), "
         // Tech Support (service_id = 3)
-        "(3, 'Jack Wilson', 'VPN setup issue',     5),  "
-        "(3, 'Karen Moore', 'Printer not working',  11);";
+        "(3, 1, 'Jack Wilson', 'VPN setup issue',    5),  "
+        "(3, 2, 'Karen Moore', 'Printer not working', 11);";
 
     rc = sqlite3_exec(db, insertQueueSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
