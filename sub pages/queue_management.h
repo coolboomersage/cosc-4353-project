@@ -241,7 +241,7 @@ inline int estimateWaitTimeForUser(sqlite3* db, int serviceId, int queueId) {
 
     for (size_t i = 0; i < queue.size(); i++) {
         if (queue[i].id == queueId) {
-            return static_cast<int>(i) * estimatedServiceTime;
+            return queue[i].position * estimatedServiceTime;
         }
     }
 
