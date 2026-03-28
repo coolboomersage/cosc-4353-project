@@ -11,6 +11,120 @@
 #include "sub pages/service_management.h"
 #include "sub pages/queue_management.h"
 
+inline void addTests(std::vector<UnitTestBase*> &tests){
+    tests.push_back(new UnitTest<bool, std::string, 1>(
+        "email pass",
+        [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+        {"cbs@abc.cc"},
+        true
+    ));
+
+    tests.push_back(new UnitTest<bool, std::string, 1>(
+    "email fail no at",
+    [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+    {"cbsabc.cc"},
+    false
+    ));
+
+    tests.push_back(new UnitTest<bool, std::string, 1>(
+        "email fail no suffix",
+        [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+        {"cbs@abc"},
+        false
+    ));
+
+    tests.push_back(new UnitTest<bool, std::string, 1>(
+        "email fail spaces",
+        [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+        {"cbs @abc.cc"},
+        false
+    ));
+
+    tests.push_back(new UnitTest<bool, std::string, 1>(
+        "email pass subdomain",
+        [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+        {"me@test.school.edu"},
+        true
+    ));
+
+    tests.push_back(new UnitTest<bool, std::string, 1>(
+            "email pass",
+            [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
+            {"cbs@abc.cc"},
+            true
+        ));
+
+    // jsonEscape tests
+    tests.push_back(new UnitTest<std::string, std::string, 1>(
+        "jsonEscape plain string",
+        [](std::array<std::string, 1> args){ return jsonEscape(args[0]); },
+        {"hello world"},
+        "hello world"
+    ));
+
+    tests.push_back(new UnitTest<std::string, std::string, 1>(
+        "jsonEscape double quote",
+        [](std::array<std::string, 1> args){ return jsonEscape(args[0]); },
+        {"say \"hi\""},
+        "say \\\"hi\\\""
+    ));
+
+    tests.push_back(new UnitTest<std::string, std::string, 1>(
+        "jsonEscape backslash",
+        [](std::array<std::string, 1> args){ return jsonEscape(args[0]); },
+        {"C:\\Users\\foo"},
+        "C:\\\\Users\\\\foo"
+    ));
+
+    tests.push_back(new UnitTest<std::string, std::string, 1>(
+        "jsonEscape newline",
+        [](std::array<std::string, 1> args){ return jsonEscape(args[0]); },
+        {"line1\nline2"},
+        "line1\\nline2"
+    ));
+
+    tests.push_back(new UnitTest<std::string, std::string, 1>(
+        "jsonEscape carriage return",
+        [](std::array<std::string, 1> args){ return jsonEscape(args[0]); },
+        {"line1\rline2"},
+        "line1\\rline2"
+    ));
+
+    tests.push_back(new UnitTest<std::string, std::string, 1>(
+        "jsonEscape tab",
+        [](std::array<std::string, 1> args){ return jsonEscape(args[0]); },
+        {"col1\tcol2"},
+        "col1\\tcol2"
+    ));
+
+    tests.push_back(new UnitTest<std::string, std::string, 1>(
+        "jsonEscape empty string",
+        [](std::array<std::string, 1> args){ return jsonEscape(args[0]); },
+        {""},
+        ""
+    ));
+
+    tests.push_back(new UnitTest<std::string, std::string, 1>(
+        "jsonEscape mixed specials",
+        [](std::array<std::string, 1> args){ return jsonEscape(args[0]); },
+        {"a\"b\\c\nd"},
+        "a\\\"b\\\\c\\nd"
+    ));
+
+    tests.push_back(new UnitTest<std::string, int, 1>(
+    "getUsernameById - userId 1 returns root",
+    [](std::array<int, 1> args){ return getUsernameById(args[0]); },
+    {1},
+    "root"
+    ));
+
+    tests.push_back(new UnitTest<int, int, 1>(
+        "getAuthLevelById - userId 1 returns 3",
+        [](std::array<int, 1> args){ return getAuthLevelById(args[0]); },
+        {1},
+        3
+    ));
+}
 
 int main() {
     initCoutCapture(); // start cout capture for admin panel
@@ -39,44 +153,7 @@ int main() {
 
     //unitTest vector defined for use in the admin panel for unit testing
     std::vector<UnitTestBase*> tests;
-    tests.push_back(new UnitTest<bool, std::string, 1>(
-        "email pass",
-        [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
-        {"cbs@abc.cc"},
-        true
-    ));
-
-    // Additional Test
-    tests.push_back(new UnitTest<bool, std::string, 1>(
-    "email fail no at",
-    [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
-    {"cbsabc.cc"},
-    false
-));
-
-tests.push_back(new UnitTest<bool, std::string, 1>(
-    "email fail no suffix",
-    [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
-    {"cbs@abc"},
-    false
-));
-
-tests.push_back(new UnitTest<bool, std::string, 1>(
-    "email fail spaces",
-    [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
-    {"cbs @abc.cc"},
-    false
-));
-
-tests.push_back(new UnitTest<bool, std::string, 1>(
-    "email pass subdomain",
-    [](std::array<std::string, 1> args){ return isValidEmail(args[0]); },
-    {"me@test.school.edu"},
-    true
-));
-    // Test End
-
-    
+    addTests(tests);
 
     // Handler functions
     auto handleCalendar = [](const httplib::Request&, httplib::Response& res) {
