@@ -504,6 +504,50 @@ int main() {
         res.set_content("{\"success\":true}", "application/json");
     });
 
+    server.Post("/api/leave-queue", [](const httplib::Request& req, httplib::Response& res) {
+    // ── Auth check ────────────────────────────────────────────────────────────
+    if (currentUserId == 0) {
+        res.status = 401;
+        res.set_content(R"({"success":false,"error":"not logged in"})", "application/json");
+        return;
+    }
+
+    const std::string currentUsername = getUsernameById(currentUserId);
+
+    // ── Parse body ────────────────────────────────────────────────────────────
+    int serviceId = -1;
+    try {
+        auto body = nlohmann::json::parse(req.body);
+        serviceId = body.at("serviceId").get<int>();
+    } catch (...) {
+        res.status = 400;
+        res.set_content(R"({"success":false,"error":"invalid body"})", "application/json");
+        return;
+    }
+
+    if (serviceId < 0) {
+        res.status = 400;
+        res.set_content(R"({"success":false,"error":"invalid serviceId"})", "application/json");
+        return;
+    }
+
+    // ── Open DB and remove user ───────────────────────────────────────────────
+    sqlite3* db = nullptr;
+    std::string dbLoc = DATABASE_FILE_LOCATION;
+
+    if (sqlite3_open(dbLoc.c_str(), &db) != SQLITE_OK) {
+        sqlite3_close(db);
+        res.status = 500;
+        res.set_content(R"({"success":false,"error":"db error"})", "application/json");
+        return;
+    }
+
+    removeUserFromQueue(db, currentUsername, serviceId);
+    sqlite3_close(db);
+
+    res.set_content(R"({"success":true})", "application/json");
+});
+
     server.Get("/", [](const httplib::Request&, httplib::Response& res) {
         std::string html = R"(
             <!DOCTYPE html>

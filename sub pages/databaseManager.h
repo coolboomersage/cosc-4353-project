@@ -82,7 +82,8 @@ bool initDatabase(sqlite3* db) {
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "name TEXT UNIQUE NOT NULL, "
         "estimated_service_time INTEGER NOT NULL, " // in minutes
-        "length);"; //num people in queue 
+        "length INTEGER NOT NULL, " //num people in queue 
+        "priority INTEGER NOT NULL);"; //lower = more important , 0 - most important
 
     rc = sqlite3_exec(db, createServicesSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
@@ -124,10 +125,10 @@ bool initDatabase(sqlite3* db) {
 
     // Seed services table
     const char* insertServicesSQL =
-        "INSERT OR IGNORE INTO services (name, estimated_service_time , length) VALUES "
-        "('Advising', 20 , 0), "
-        "('Tutoring', 30 , 0), "
-        "('Tech Support', 15 , 0);";
+        "INSERT OR IGNORE INTO services (name, estimated_service_time , length, priority) VALUES "
+        "('Advising', 20 , 0, 2), "
+        "('Tutoring', 30 , 0, 2), "
+        "('Tech Support', 15 , 0, 0);";
 
     rc = sqlite3_exec(db, insertServicesSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
@@ -180,6 +181,23 @@ bool initDatabase(sqlite3* db) {
     rc = sqlite3_exec(db, insertQueueSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
         std::cout << "Failed to insert queue entries: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+        return false;
+    }
+
+    // Create history table
+    const char* createHistorySQL =
+        "CREATE TABLE IF NOT EXISTS history ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "user_id INTEGER NOT NULL, "
+        "action TEXT NOT NULL, "
+        "queue_id INTEGER NOT NULL, "
+        "FOREIGN KEY (user_id) REFERENCES accounts(id), "
+        "FOREIGN KEY (queue_id) REFERENCES queue(id));";
+
+    rc = sqlite3_exec(db, createHistorySQL, nullptr, nullptr, &errMsg);
+    if (rc != SQLITE_OK) {
+        std::cout << "Failed to create history table: " << errMsg << std::endl;
         sqlite3_free(errMsg);
         return false;
     }

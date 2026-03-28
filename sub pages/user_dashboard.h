@@ -5,6 +5,115 @@
 
 // UI-only User Dashboard page (static placeholder data)
 static inline std::string userDashboardPage(const std::string& username) {
+
+  sqlite3* db = nullptr;
+  std::string dbPath = DATABASE_FILE_LOCATION;
+  std::cout << "Attempting to open database at: " << dbPath << std::endl;
+
+  bool dbExists = std::ifstream(dbPath).good();
+
+  if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
+      sqlite3_close(db);
+      std::cerr << "Failed to open database in user dash: " << sqlite3_errmsg(db) << std::endl;
+  }
+
+  if (!dbExists) {
+      std::cout << "No database found, creating default" << std::endl;
+      if (!initDatabase(db)) {
+          std::cout << "Failed to initialize database." << std::endl;
+      }
+  } else {
+      std::cout << "Pre-existing database found" << std::endl;
+  }
+
+  // Build active queue rows using the user's current queue memberships
+  std::string activeQueueRows;
+
+  std::vector<int> serviceIds = getServiceIdUserCurrentlyIn(db, username);
+
+  for (int serviceId : serviceIds) {
+      // Fetch the service name
+      std::string serviceName = "Unknown Service";
+      const char* serviceSQL = "SELECT name FROM services WHERE service_id = ?;";
+      sqlite3_stmt* svcStmt = nullptr;
+      if (sqlite3_prepare_v2(db, serviceSQL, -1, &svcStmt, nullptr) == SQLITE_OK) {
+          sqlite3_bind_int(svcStmt, 1, serviceId);
+          if (sqlite3_step(svcStmt) == SQLITE_ROW) {
+              serviceName = reinterpret_cast<const char*>(sqlite3_column_text(svcStmt, 0));
+          }
+          sqlite3_finalize(svcStmt);
+      }
+
+      // Find the user's specific entry in this service's queue
+      std::vector<QueueEntry> entries = getQueueByService(db, serviceId);
+      for (const auto& entry : entries) {
+          if (entry.name == username) {
+              std::string etaStr = entry.waitTime > 0
+                  ? "~" + std::to_string(entry.waitTime) + " min"
+                  : "—";
+
+              activeQueueRows +=
+                  "<tr>"
+                  "<td>" + serviceName + "</td>"
+                  "<td><span class=\"pill inqueue\">In Queue</span></td>"
+                  "<td>#" + std::to_string(entry.position) + "</td>"
+                  "<td>" + etaStr + "</td>"
+                  "</tr>";
+              break; // A user can only occupy one slot per service
+          }
+      }
+  }
+
+  if (activeQueueRows.empty()) {
+      activeQueueRows = "<tr><td colspan=\"4\" class=\"muted\">You are not currently in any queues.</td></tr>";
+  }
+
+  // Build history rows by querying the history table
+  std::string historyRows;
+
+  const char* historySQL =
+    "SELECT h.action, COALESCE(s.name, 'Unknown Service'), h.queue_id "
+    "FROM history h "
+    "LEFT JOIN queue q ON h.queue_id = q.id "
+    "LEFT JOIN services s ON q.service_id = s.id "
+    "WHERE h.user_id = ? "
+    "ORDER BY h.id DESC;";
+
+  sqlite3_stmt* stmt;
+  if (sqlite3_prepare_v2(db, historySQL, -1, &stmt, nullptr) == SQLITE_OK) {
+      sqlite3_bind_int(stmt, 1, currentUserId);
+
+      while (sqlite3_step(stmt) == SQLITE_ROW) {
+          std::string action   = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+          std::string service  = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+          int queueId          = sqlite3_column_int(stmt, 2);
+
+          std::string actionLabel, pillClass;
+          if (action == "JOINED_QUEUE") {
+              actionLabel = "Joined";
+              pillClass   = "inqueue";
+          } else if (action == "REMOVED_FROM_QUEUE") {
+              actionLabel = "Left / Removed";
+              pillClass   = "done";
+          } else {
+              actionLabel = action;
+              pillClass   = "waiting";
+          }
+
+          historyRows +=
+              "<tr>"
+              "<td>" + service + "</td>"
+              "<td><span class=\"pill " + pillClass + "\">" + actionLabel + "</span></td>"
+              "<td>" + std::to_string(queueId) + "</td>"
+              "</tr>";
+      }
+      sqlite3_finalize(stmt);
+  }
+
+  if (historyRows.empty()) {
+      historyRows = "<tr><td colspan=\"3\" class=\"muted\">No history found.</td></tr>";
+  }
+
     return R"(
 <!doctype html>
 <html>
@@ -67,8 +176,8 @@ static inline std::string userDashboardPage(const std::string& username) {
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div style="font-weight:700;">Current / Recent Activity</div>
-            <div class="muted">Static table for now</div>
+            <div style="font-weight:700;">Active Queues</div>
+            <div class="muted">Queues you are currently in</div>
           </div>
           <div style="display:flex; gap:10px;">
             <button class="btn">Refresh</button>
@@ -79,31 +188,11 @@ static inline std::string userDashboardPage(const std::string& username) {
         <table style="margin-top:12px;">
           <thead>
             <tr>
-              <th>Queue</th><th>Status</th><th>Position</th><th>ETA</th><th>Action</th>
+              <th>Queue</th><th>Status</th><th>Position</th><th>ETA</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Tutoring</td>
-              <td><span class="pill inqueue">In Queue</span></td>
-              <td>#3</td>
-              <td>9–12 min</td>
-              <td><button class="btn">Leave</button></td>
-            </tr>
-            <tr>
-              <td>Advising</td>
-              <td><span class="pill waiting">Waiting</span></td>
-              <td>#8</td>
-              <td>~25 min</td>
-              <td><button class="btn">View</button></td>
-            </tr>
-            <tr>
-              <td>Tech Support</td>
-              <td><span class="pill done">Done</span></td>
-              <td>—</td>
-              <td>—</td>
-              <td><button class="btn">Details</button></td>
-            </tr>
+            )" + activeQueueRows + R"(
           </tbody>
         </table>
       </div>
@@ -112,24 +201,22 @@ static inline std::string userDashboardPage(const std::string& username) {
         <div style="font-weight:700;">Notifications</div>
         <div class="muted" style="margin-bottom:10px;">UI-only list for now</div>
         <div>• Your turn is coming up soon (Tutoring).</div>
-        <div>• Queue “Advising” changed ETA.</div>
+        <div>• Queue "Advising" changed ETA.</div>
         <div class="muted">Tip: Notifications tab can be built next.</div>
       </div>
     </div>
 
     <div class="card" style="margin-top:16px;">
       <div style="font-weight:700;">History</div>
-      <div class="muted" style="margin-bottom:10px;">Static table for now</div>
+      <div class="muted" style="margin-bottom:10px;">Live data from your account</div>
       <table>
         <thead>
           <tr>
-            <th>Date</th><th>Queue</th><th>Result</th><th>Duration</th>
+            <th>Service</th><th>Action</th><th>Queue ID</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>Today</td><td>Tutoring</td><td>In progress</td><td>—</td></tr>
-          <tr><td>Yesterday</td><td>Advising</td><td>Completed</td><td>14 min</td></tr>
-          <tr><td>Feb 10</td><td>Tech Support</td><td>Completed</td><td>6 min</td></tr>
+          )" + historyRows + R"(
         </tbody>
       </table>
     </div>
@@ -139,5 +226,4 @@ static inline std::string userDashboardPage(const std::string& username) {
 </html>
 )";
 }
-
 #endif
