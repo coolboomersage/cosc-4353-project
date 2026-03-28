@@ -3,12 +3,13 @@
 
 #include "../external/sqlite-amalgamation-3510200/sqlite3.h"
 #include "../external/phc-winner-argon2-20190702/include/argon2.h"
+#include "account.h"
 #include <cstring>
 #include <random>
 #include <iomanip>
 #include <iostream>
 
-#define DATABASE_FILE_LOCATION "/QueuesmartDatabase.db"
+#define DATABASE_FILE_LOCATION getExecutableDirectory() + "/QueuesmartDatabase.db"
 
 std::string hashPassword(const std::string& password) {
     const uint32_t HASH_LEN = 32;
@@ -80,7 +81,8 @@ bool initDatabase(sqlite3* db) {
         "CREATE TABLE IF NOT EXISTS services ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "name TEXT UNIQUE NOT NULL, "
-        "estimated_service_time INTEGER NOT NULL);"; // in minutes
+        "estimated_service_time INTEGER NOT NULL, " // in minutes
+        "length);"; //num people in queue 
 
     rc = sqlite3_exec(db, createServicesSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
@@ -122,10 +124,10 @@ bool initDatabase(sqlite3* db) {
 
     // Seed services table
     const char* insertServicesSQL =
-        "INSERT OR IGNORE INTO services (name, estimated_service_time) VALUES "
-        "('Advising', 20), "
-        "('Tutoring', 30), "
-        "('Tech Support', 15);";
+        "INSERT OR IGNORE INTO services (name, estimated_service_time , length) VALUES "
+        "('Advising', 20 , 0), "
+        "('Tutoring', 30 , 0), "
+        "('Tech Support', 15 , 0);";
 
     rc = sqlite3_exec(db, insertServicesSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
@@ -133,6 +135,29 @@ bool initDatabase(sqlite3* db) {
         sqlite3_free(errMsg);
         return false;
     }
+
+    // Trigger: increment length when someone joins the queue
+    const char* triggerInsertSQL =
+        "CREATE TRIGGER IF NOT EXISTS update_length_on_insert "
+        "AFTER INSERT ON queue "
+        "BEGIN "
+        "    UPDATE services "
+        "    SET length = (SELECT COUNT(*) FROM queue WHERE service_id = NEW.service_id) "
+        "    WHERE id = NEW.service_id; "
+        "END;";
+
+    // Trigger: decrement length when someone leaves the queue
+    const char* triggerDeleteSQL =
+        "CREATE TRIGGER IF NOT EXISTS update_length_on_delete "
+        "AFTER DELETE ON queue "
+        "BEGIN "
+        "    UPDATE services "
+        "    SET length = (SELECT COUNT(*) FROM queue WHERE service_id = OLD.service_id) "
+        "    WHERE id = OLD.service_id; "
+        "END;";
+
+    sqlite3_exec(db, triggerInsertSQL, nullptr, nullptr, nullptr);
+    sqlite3_exec(db, triggerDeleteSQL, nullptr, nullptr, nullptr);
 
     // Seed queue table — relies on services being inserted with IDs 1, 2, 3
     const char* insertQueueSQL =

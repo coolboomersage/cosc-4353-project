@@ -124,8 +124,7 @@ LoginResult checkCredentials(const std::string& username, const std::string& pas
     sqlite3* db;
     int rc;
 
-    std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
+    std::string dbPath = DATABASE_FILE_LOCATION;
 
     std::cout << "Attempting to open database at: " << dbPath << std::endl;
 
@@ -196,8 +195,7 @@ CreateAccountResult createAccount(const std::string& email, const std::string& p
     int rc;
     char* errMsg = nullptr;
 
-    std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
+    std::string dbPath = DATABASE_FILE_LOCATION;
     
     rc = sqlite3_open(dbPath.c_str(), &db);
     
@@ -284,8 +282,7 @@ std::string getUsernameById(int userId) {
     int rc;
     std::string username = "";
 
-    std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
+    std::string dbPath = DATABASE_FILE_LOCATION;
     
     rc = sqlite3_open(dbPath.c_str(), &db);
     
@@ -325,8 +322,7 @@ int getAuthLevelById(int userId) {
     int rc;
     int authLevel = 0;
 
-    std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
+    std::string dbPath = DATABASE_FILE_LOCATION;
     
     rc = sqlite3_open(dbPath.c_str(), &db);
     

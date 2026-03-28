@@ -7,7 +7,34 @@
 #include <functional>
 #include <vector>
 #include <sstream>
+#include "queue_management.h"
 
+// Helper to escape strings for JSON injection
+static inline std::string jsonEscape(const std::string& s) {
+    std::string out;
+    for (char c : s) {
+        if      (c == '"')  out += "\\\"";
+        else if (c == '\\') out += "\\\\";
+        else if (c == '\n') out += "\\n";
+        else if (c == '\r') out += "\\r";
+        else if (c == '\t') out += "\\t";
+        else                out += c;
+    }
+    return out;
+}
+
+// Serialize a vector of QueueEntry into a JS array literal
+static inline std::string buildJsArray(const std::vector<QueueEntry>& entries) {
+    std::string out = "[\n";
+    for (const auto& e : entries) {
+        std::string waited = std::to_string(e.waitTime) + " min";
+        out += "        { name: \"" + jsonEscape(e.name)   + "\","
+               " reason: \"" + jsonEscape(e.reason) + "\","
+               " waited: \"" + waited                + "\" },\n";
+    }
+    out += "      ]";
+    return out;
+}
 
 // ─── UnitTestBase ─────────────────────────────────────────────────────────────
 // Non-templated abstract base so tests can be stored in a std::vector
@@ -303,6 +330,39 @@ static inline std::string adminDashboardPage(const std::string& username) {
     std::string logHtml;
     std::istringstream stream(rawLogs);
     std::string line;
+    sqlite3* db = nullptr;
+    std::string dbPath = DATABASE_FILE_LOCATION;
+
+    bool dbExists = std::ifstream(dbPath).good();
+
+    if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
+        sqlite3_close(db);
+        std::cerr << "Failed to open database: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    if (!dbExists) {
+        std::cout << "No database found while opening admin panel, creating default" << std::endl;
+        if (!initDatabase(db)) {
+            std::cout << "Failed to initialize database." << std::endl;
+        }
+    } else {
+      std::cout << "DEBUG: successfully opened database on admin page call\n";
+    }
+
+
+    auto advising    = getQueueByService(db, 1);
+    auto tutoring    = getQueueByService(db, 2);
+    auto techSupport = getQueueByService(db, 3);
+
+    std::string queueDataJs =
+        "const queueData = {\n"
+        "      'Advising':    " + buildJsArray(advising)    + ",\n"
+        "      'Tutoring':    " + buildJsArray(tutoring)    + ",\n"
+        "      'Tech Support':" + buildJsArray(techSupport) + ",\n"
+        "    };";
+
+    std::cout << "DEBUG: queueDataJs string:\n" + queueDataJs + "\n";
+
     while (std::getline(stream, line)) {
         if (!line.empty()) {
             std::string escaped;
@@ -528,25 +588,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
   </div>
 
   <script>
-    const queueData = {
-      'Advising': [
-        { name: 'Alice Johnson',  reason: 'Course registration help', waited: '2 min'  },
-        { name: 'Bob Smith',      reason: 'Degree audit question',     waited: '7 min'  },
-        { name: 'Carol Williams', reason: 'Transfer credit inquiry',   waited: '13 min' },
-        { name: 'David Lee',      reason: 'Scholarship advising',      waited: '18 min' },
-        { name: 'Eva Martinez',   reason: 'General advising',          waited: '24 min' },
-      ],
-      'Tutoring': [
-        { name: 'Frank Brown',  reason: 'Calculus II help',       waited: '3 min'  },
-        { name: 'Grace Kim',    reason: 'Python debugging',        waited: '9 min'  },
-        { name: 'Henry Davis',  reason: 'Linear algebra review',   waited: '15 min' },
-        { name: 'Isla Thompson',reason: 'Essay feedback',          waited: '20 min' },
-      ],
-      'Tech Support': [
-        { name: 'Jack Wilson', reason: 'VPN setup issue',       waited: '5 min'  },
-        { name: 'Karen Moore', reason: 'Printer not working',   waited: '11 min' },
-      ],
-    };
+    )HTML" + queueDataJs + R"HTML(
 
     let currentQueue = null;
     let dragSrcIndex = null;

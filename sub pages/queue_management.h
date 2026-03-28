@@ -15,6 +15,60 @@ struct QueueEntry {
     int waitTime;
 };
 
+struct ServiceEntry{
+    int id;
+    std::string name;
+    int estServiceTime;
+    int length;
+};
+
+inline std::vector<ServiceEntry> getServices(sqlite3* db){
+    std::vector<ServiceEntry> services;
+    
+    const char* query = "SELECT id, name, estimated_service_time, length FROM services;";
+    sqlite3_stmt* stmt = nullptr;
+    
+    if(sqlite3_prepare_v2(db, query, -1, &stmt, nullptr) != SQLITE_OK){
+        return services;
+    }
+    
+    while(sqlite3_step(stmt) == SQLITE_ROW){
+        ServiceEntry entry;
+
+        entry.id = sqlite3_column_int(stmt, 0);
+        const unsigned char* name = sqlite3_column_text(stmt, 1);
+        entry.name = name ? reinterpret_cast<const char*>(name) : "";
+        entry.estServiceTime = sqlite3_column_int(stmt, 2);
+        entry.length = sqlite3_column_int(stmt, 3);
+        
+        services.push_back(entry);
+    }
+    
+    sqlite3_finalize(stmt);
+    return services;
+}
+
+inline int getServiceLengthById(sqlite3* db, int id) {
+    if (!db) return -1;
+
+    const char* sql = "SELECT length FROM services WHERE id = ? LIMIT 1;";
+    sqlite3_stmt* stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        return -1;
+    }
+
+    sqlite3_bind_int(stmt, 1, id);
+
+    int length = -1;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        length = sqlite3_column_int(stmt, 0);
+    }
+
+    sqlite3_finalize(stmt);
+    return length;
+}
+
 inline int getEstimatedServiceTime(sqlite3* db, int serviceId) {
     const char* sql = "SELECT estimated_service_time FROM services WHERE id = ?;";
     sqlite3_stmt* stmt = nullptr;
@@ -107,28 +161,29 @@ inline bool addToQueue(sqlite3* db, int serviceId, const std::string& name, cons
     auto queue = getQueueByService(db, serviceId);
     int waitTime = static_cast<int>(queue.size()) * estimated;
 
-    const char* sql = "INSERT INTO queue (service_id, name, reason, wait_time) VALUES (?, ?, ?, ?);";
-    sqlite3_stmt* stmt = nullptr;
+    sqlite3_stmt* stmt;
+    const char* insertQueueSQL =
+        "INSERT INTO queue (service_id, position, name, reason, wait_time) VALUES (?, ?, ?, ?, 0);";
 
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        message = "Failed to prepare queue insert.";
-        return false;
-    }
-
+    sqlite3_prepare_v2(db, insertQueueSQL, -1, &stmt, nullptr);
     sqlite3_bind_int(stmt, 1, serviceId);
-    sqlite3_bind_text(stmt, 2, name.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 3, reason.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 4, waitTime);
+    sqlite3_bind_int(stmt, 2, getServiceLengthById(db, serviceId));
+    sqlite3_bind_text(stmt, 3, getUsernameById(currentUserId).c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, reason.c_str(), -1, SQLITE_TRANSIENT);
 
-    bool ok = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_step(stmt);
     sqlite3_finalize(stmt);
 
-    if (!ok) {
-        message = "Failed to add to queue.";
+    char* errMsg = nullptr;
+    int rc = sqlite3_exec(db, insertQueueSQL, nullptr, nullptr, &errMsg);
+    if (rc != SQLITE_OK) {
+        std::cout << "Failed to insert queue entries: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
         return false;
     }
 
     recalculateWaitTimes(db, serviceId);
+    sqlite3_exec(db, "PRAGMA wal_checkpoint(FULL);", nullptr, nullptr, nullptr);
     message = "Added to queue successfully.";
     return true;
 }

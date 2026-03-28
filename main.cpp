@@ -17,8 +17,7 @@ int main() {
     httplib::Server server;
 
     sqlite3* db = nullptr;
-    std::string exeDir = getExecutableDirectory();
-    std::string dbPath = exeDir + DATABASE_FILE_LOCATION;
+    std::string dbPath = DATABASE_FILE_LOCATION;
     std::cout << "Attempting to open database at: " << dbPath << std::endl;
 
     bool dbExists = std::ifstream(dbPath).good();
@@ -33,10 +32,10 @@ int main() {
         std::cout << "No database found, creating default" << std::endl;
         if (!initDatabase(db)) {
             std::cout << "Failed to initialize database." << std::endl;
-    }
-}     else {
+        }
+    } else {
         std::cout << "Pre-existing database found" << std::endl;
-}
+    }
 
     //unitTest vector defined for use in the admin panel for unit testing
     std::vector<UnitTestBase*> tests;
@@ -371,6 +370,61 @@ tests.push_back(new UnitTest<bool, std::string, 1>(
             std::string(R"({"pass":)") + (passed ? "true" : "false") + "}",
             "application/json"
         );
+    });
+
+    server.Post("/api/join-queue", [&db](const httplib::Request& req, httplib::Response& res) {
+        res.set_header("Content-Type", "application/json");
+ 
+        auto idParam = req.get_param_value("id");
+        if (idParam.empty()) {
+            res.status = 400;
+            res.set_content("{\"success\":false,\"error\":\"Missing service id\"}", "application/json");
+            return;
+        }
+ 
+        int serviceId = 0;
+        try {
+            serviceId = std::stoi(idParam);
+        } catch (...) {
+            res.status = 400;
+            res.set_content("{\"success\":false,\"error\":\"Invalid service id\"}", "application/json");
+            return;
+        }
+ 
+        // Parse reason from JSON body
+        std::string reason;
+        auto contentType = req.get_header_value("Content-Type");
+        if (contentType.find("application/json") != std::string::npos && !req.body.empty()) {
+            // Simple JSON extraction for "reason" field
+            auto pos = req.body.find("\"reason\"");
+            if (pos != std::string::npos) {
+                auto start = req.body.find('"', pos + 8);
+                if (start != std::string::npos) {
+                    auto end = req.body.find('"', start + 1);
+                    if (end != std::string::npos) {
+                        reason = req.body.substr(start + 1, end - start - 1);
+                    }
+                }
+            }
+        }
+ 
+        if (reason.empty()) {
+            res.status = 400;
+            res.set_content("{\"success\":false,\"error\":\"Missing reason\"}", "application/json");
+            return;
+        }
+ 
+        if (reason.length() > 128) {
+            res.status = 400;
+            res.set_content("{\"success\":false,\"error\":\"Reason exceeds 128 characters\"}", "application/json");
+            return;
+        }
+ 
+        std::string message; // var to ignore message content
+        addToQueue(db, serviceId, getUsernameById(currentUserId), reason , message);
+ 
+        res.status = 200;
+        res.set_content("{\"success\":true}", "application/json");
     });
 
     server.Get("/", [](const httplib::Request&, httplib::Response& res) {
