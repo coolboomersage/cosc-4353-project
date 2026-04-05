@@ -10,7 +10,10 @@
 struct Service {
     int id;
     std::string name;
+    std::string description;
     int estimatedServiceTime;
+    int priority;
+    std::string createdDate;
 };
 
 inline bool addService(sqlite3* db, const std::string& name, int estimatedServiceTime, std::string& message) {
