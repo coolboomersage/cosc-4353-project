@@ -157,10 +157,14 @@ inline nlohmann::json servicesToJson(const std::vector<Service>& services) {
         arr.push_back({
             {"id", s.id},
             {"name", s.name},
-            {"estimatedServiceTime", s.estimatedServiceTime}
+            {"description", s.description},
+            {"estimatedServiceTime", s.estimatedServiceTime},
+            {"priority", s.priority},
+            {"createdDate", s.createdDate}
         });
     }
     return arr;
 }
+
 
 #endif
