@@ -257,15 +257,22 @@ int main() {
     });
     
     server.Post("/api/services/add", [&](const httplib::Request& req, httplib::Response& res) {
-        auto json = nlohmann::json::parse(req.body);
-        std::string message;
-        bool success = addService(db, json["name"], json["estimatedServiceTime"], message);
-    
-        nlohmann::json response;
-        response["success"] = success;
-        response["message"] = message;
-        res.set_content(response.dump(), "application/json");
-    });
+    auto json = nlohmann::json::parse(req.body);
+    std::string message;
+    bool success = addService(
+        db,
+        json["name"],
+        json["description"],
+        json["estimatedServiceTime"],
+        json["priority"],
+        message
+    );
+
+    nlohmann::json response;
+    response["success"] = success;
+    response["message"] = message;
+    res.set_content(response.dump(), "application/json");
+});
     
     server.Post("/api/services/update", [&](const httplib::Request& req, httplib::Response& res) {
         auto json = nlohmann::json::parse(req.body);
