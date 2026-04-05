@@ -16,13 +16,14 @@ struct Service {
     std::string createdDate;
 };
 
-inline bool addService(sqlite3* db, const std::string& name, int estimatedServiceTime, std::string& message) {
-    if (name.empty() || estimatedServiceTime <= 0) {
-        message = "Invalid service name or estimated time.";
-        return false;
+inline bool addService(sqlite3* db, const std::string& name, const std::string& description, int estimatedServiceTime, int priority, std::string& message) {
+    if (name.empty() || description.empty() || estimatedServiceTime <= 0) {
+    message = "Invalid service name or estimated time.";
+    return false;
     }
 
-    const char* sql = "INSERT INTO services (name, estimated_service_time) VALUES (?, ?);";
+    const char* sql = "INSERT INTO services (name, description, estimated_service_time, length, priority, created_date) VALUES (?, ?, ?, 0, ?, DATE('now'));";
+    
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -30,8 +31,11 @@ inline bool addService(sqlite3* db, const std::string& name, int estimatedServic
         return false;
     }
 
+
     sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 2, estimatedServiceTime);
+    sqlite3_bind_text(stmt, 2, description.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 3, estimatedServiceTime);
+    sqlite3_bind_int(stmt, 4, priority);
 
     bool ok = (sqlite3_step(stmt) == SQLITE_DONE);
     sqlite3_finalize(stmt);
