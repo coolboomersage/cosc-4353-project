@@ -81,9 +81,11 @@ bool initDatabase(sqlite3* db) {
         "CREATE TABLE IF NOT EXISTS services ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "name TEXT UNIQUE NOT NULL, "
-        "estimated_service_time INTEGER NOT NULL, " // in minutes
-        "length INTEGER NOT NULL, " //num people in queue 
-        "priority INTEGER NOT NULL);"; //lower = more important , 0 - most important
+        "description TEXT NOT NULL, "
+        "estimated_service_time INTEGER NOT NULL, "
+        "length INTEGER NOT NULL, "
+        "priority INTEGER NOT NULL, "
+        "created_date TEXT NOT NULL);";
 
     rc = sqlite3_exec(db, createServicesSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
