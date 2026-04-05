@@ -47,7 +47,7 @@ inline bool addService(sqlite3* db, const std::string& name, int estimatedServic
 
 inline std::vector<Service> getAllServices(sqlite3* db) {
     std::vector<Service> services;
-    const char* sql = "SELECT id, name, estimated_service_time FROM services ORDER BY id ASC;";
+    const char* sql = "SELECT id, name, description, estimated_service_time, priority, created_date FROM services ORDER BY id ASC;";
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -58,7 +58,10 @@ inline std::vector<Service> getAllServices(sqlite3* db) {
         Service s;
         s.id = sqlite3_column_int(stmt, 0);
         s.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        s.estimatedServiceTime = sqlite3_column_int(stmt, 2);
+        s.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        s.estimatedServiceTime = sqlite3_column_int(stmt, 3);
+        s.priority = sqlite3_column_int(stmt, 4);
+        s.createdDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
         services.push_back(s);
     }
 
