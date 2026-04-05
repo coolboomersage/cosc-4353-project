@@ -127,11 +127,12 @@ bool initDatabase(sqlite3* db) {
 
     // Seed services table
     const char* insertServicesSQL =
-        "INSERT OR IGNORE INTO services (name, estimated_service_time , length, priority) VALUES "
-        "('Advising', 20 , 0, 2), "
-        "('Tutoring', 30 , 0, 2), "
-        "('Tech Support', 15 , 0, 0);";
+        "INSERT OR IGNORE INTO services (name, description, estimated_service_time, length, priority, created_date) VALUES "
+        "('Advising', 'Academic advising support', 20, 0, 2, DATE('now')), "
+        "('Tutoring', 'Tutoring assistance', 30, 0, 2, DATE('now')), "
+        "('Tech Support', 'Technical support services', 15, 0, 0, DATE('now'));";
 
+    
     rc = sqlite3_exec(db, insertServicesSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
         std::cout << "Failed to insert services: " << errMsg << std::endl;
