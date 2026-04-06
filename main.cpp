@@ -257,27 +257,42 @@ int main() {
     });
     
     server.Post("/api/services/add", [&](const httplib::Request& req, httplib::Response& res) {
-        auto json = nlohmann::json::parse(req.body);
-        std::string message;
-        bool success = addService(db, json["name"], json["estimatedServiceTime"], message);
-    
-        nlohmann::json response;
-        response["success"] = success;
-        response["message"] = message;
-        res.set_content(response.dump(), "application/json");
-    });
+    auto json = nlohmann::json::parse(req.body);
+    std::string message;
+    bool success = addService(
+        db,
+        json["name"],
+        json["description"],
+        json["estimatedServiceTime"],
+        json["priority"],
+        message
+    );
+
+    nlohmann::json response;
+    response["success"] = success;
+    response["message"] = message;
+    res.set_content(response.dump(), "application/json");
+});
     
     server.Post("/api/services/update", [&](const httplib::Request& req, httplib::Response& res) {
-        auto json = nlohmann::json::parse(req.body);
-        std::string message;
-        bool success = updateService(db, json["id"], json["name"], json["estimatedServiceTime"], message);
-    
-        nlohmann::json response;
-        response["success"] = success;
-        response["message"] = message;
-        res.set_content(response.dump(), "application/json");
-    });
-    
+    auto json = nlohmann::json::parse(req.body);
+    std::string message;
+    bool success = updateService(
+        db,
+        json["id"],
+        json["name"],
+        json["description"],
+        json["estimatedServiceTime"],
+        json["priority"],
+        message
+    );
+
+    nlohmann::json response;
+    response["success"] = success;
+    response["message"] = message;
+    res.set_content(response.dump(), "application/json");
+});
+        
     server.Post("/api/services/delete", [&](const httplib::Request& req, httplib::Response& res) {
         auto json = nlohmann::json::parse(req.body);
         std::string message;
@@ -420,15 +435,43 @@ int main() {
             "Priority level must be low, medium, or high."), "text/html");
         return;
     }
+        
 
-    // add to service db here
-    // e.g. db.createQueue(service_name, description, duration, priority);
+    int priorityValue = 2;
+    if (priority == "high") {
+        priorityValue = 0;
+    } else if (priority == "medium") {
+        priorityValue = 1;
+    } else {
+        priorityValue = 2;
+    }
 
-    // Redirect back to dashboard on success
+
+    sqlite3* localDb = nullptr;
+    std::string localDbPath = DATABASE_FILE_LOCATION;
+    if (sqlite3_open(localDbPath.c_str(), &localDb) != SQLITE_OK) {
+        res.set_content(createQueuePage(username,
+            "Failed to open database."), "text/html");
+        return;
+    }
+
+
+        
+    std::string message;
+    bool success = addService(localDb, service_name, description, duration, priorityValue, message);
+    sqlite3_close(localDb);
+
+    if (!success) {
+        res.set_content(createQueuePage(username, message), "text/html");
+        return;
+    }
+
     res.set_redirect("/admin-dashboard");
     });
 
     auto* testsPtr = &tests;
+
+        
 
     server.Post(R"(/admin/unit-tests/run/(\d+))", [testsPtr](const httplib::Request& req, httplib::Response& res) {
         const std::string& idxStr = req.matches[1];

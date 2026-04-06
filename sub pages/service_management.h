@@ -10,16 +10,20 @@
 struct Service {
     int id;
     std::string name;
+    std::string description;
     int estimatedServiceTime;
+    int priority;
+    std::string createdDate;
 };
 
-inline bool addService(sqlite3* db, const std::string& name, int estimatedServiceTime, std::string& message) {
-    if (name.empty() || estimatedServiceTime <= 0) {
-        message = "Invalid service name or estimated time.";
-        return false;
+inline bool addService(sqlite3* db, const std::string& name, const std::string& description, int estimatedServiceTime, int priority, std::string& message) {
+    if (name.empty() || description.empty() || estimatedServiceTime <= 0) {
+    message = "Invalid service name or estimated time.";
+    return false;
     }
 
-    const char* sql = "INSERT INTO services (name, estimated_service_time) VALUES (?, ?);";
+    const char* sql = "INSERT INTO services (name, description, estimated_service_time, length, priority, created_date) VALUES (?, ?, ?, 0, ?, DATE('now'));";
+    
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -27,8 +31,11 @@ inline bool addService(sqlite3* db, const std::string& name, int estimatedServic
         return false;
     }
 
+
     sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 2, estimatedServiceTime);
+    sqlite3_bind_text(stmt, 2, description.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 3, estimatedServiceTime);
+    sqlite3_bind_int(stmt, 4, priority);
 
     bool ok = (sqlite3_step(stmt) == SQLITE_DONE);
     sqlite3_finalize(stmt);
@@ -44,7 +51,7 @@ inline bool addService(sqlite3* db, const std::string& name, int estimatedServic
 
 inline std::vector<Service> getAllServices(sqlite3* db) {
     std::vector<Service> services;
-    const char* sql = "SELECT id, name, estimated_service_time FROM services ORDER BY id ASC;";
+    const char* sql = "SELECT id, name, description, estimated_service_time, priority, created_date FROM services ORDER BY id ASC;";
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -55,7 +62,10 @@ inline std::vector<Service> getAllServices(sqlite3* db) {
         Service s;
         s.id = sqlite3_column_int(stmt, 0);
         s.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        s.estimatedServiceTime = sqlite3_column_int(stmt, 2);
+        s.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        s.estimatedServiceTime = sqlite3_column_int(stmt, 3);
+        s.priority = sqlite3_column_int(stmt, 4);
+        s.createdDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
         services.push_back(s);
     }
 
@@ -63,13 +73,15 @@ inline std::vector<Service> getAllServices(sqlite3* db) {
     return services;
 }
 
-inline bool updateService(sqlite3* db, int serviceId, const std::string& name, int estimatedServiceTime, std::string& message) {
-    if (serviceId <= 0 || name.empty() || estimatedServiceTime <= 0) {
-        message = "Invalid service update input.";
-        return false;
+
+inline bool updateService(sqlite3* db, int serviceId, const std::string& name, const std::string& description, int estimatedServiceTime, int priority, std::string& message) {
+    if (serviceId <= 0 || name.empty() || description.empty() || estimatedServiceTime <= 0) {
+    message = "Invalid service update input.";
+    return false;
     }
 
-    const char* sql = "UPDATE services SET name = ?, estimated_service_time = ? WHERE id = ?;";
+    const char* sql = "UPDATE services SET name = ?, description = ?, estimated_service_time = ?, priority = ? WHERE id = ?;";
+
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -78,8 +90,10 @@ inline bool updateService(sqlite3* db, int serviceId, const std::string& name, i
     }
 
     sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 2, estimatedServiceTime);
-    sqlite3_bind_int(stmt, 3, serviceId);
+    sqlite3_bind_text(stmt, 2, description.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 3, estimatedServiceTime);
+    sqlite3_bind_int(stmt, 4, priority);
+    sqlite3_bind_int(stmt, 5, serviceId);
 
     bool ok = (sqlite3_step(stmt) == SQLITE_DONE);
     int changes = sqlite3_changes(db);
@@ -151,10 +165,14 @@ inline nlohmann::json servicesToJson(const std::vector<Service>& services) {
         arr.push_back({
             {"id", s.id},
             {"name", s.name},
-            {"estimatedServiceTime", s.estimatedServiceTime}
+            {"description", s.description},
+            {"estimatedServiceTime", s.estimatedServiceTime},
+            {"priority", s.priority},
+            {"createdDate", s.createdDate}
         });
     }
     return arr;
 }
+
 
 #endif
