@@ -446,13 +446,17 @@ int main() {
         priorityValue = 2;
     }
 
+
     sqlite3* localDb = nullptr;
-    if (sqlite3_open(DATABASE_FILE_LOCATION.c_str(), &localDb) != SQLITE_OK) {
+    std::string localDbPath = DATABASE_FILE_LOCATION;
+    if (sqlite3_open(localDbPath.c_str(), &localDb) != SQLITE_OK) {
         res.set_content(createQueuePage(username,
             "Failed to open database."), "text/html");
         return;
     }
 
+
+        
     std::string message;
     bool success = addService(localDb, service_name, description, duration, priorityValue, message);
     sqlite3_close(localDb);
@@ -463,10 +467,11 @@ int main() {
     }
 
     res.set_redirect("/admin-dashboard");
-
-    
+    });
 
     auto* testsPtr = &tests;
+
+        
 
     server.Post(R"(/admin/unit-tests/run/(\d+))", [testsPtr](const httplib::Request& req, httplib::Response& res) {
         const std::string& idxStr = req.matches[1];
