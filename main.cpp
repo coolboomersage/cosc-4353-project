@@ -435,13 +435,36 @@ int main() {
             "Priority level must be low, medium, or high."), "text/html");
         return;
     }
+        
 
-    // add to service db here
-    // e.g. db.createQueue(service_name, description, duration, priority);
+    int priorityValue = 2;
+    if (priority == "high") {
+        priorityValue = 0;
+    } else if (priority == "medium") {
+        priorityValue = 1;
+    } else {
+        priorityValue = 2;
+    }
 
-    // Redirect back to dashboard on success
+    sqlite3* localDb = nullptr;
+    if (sqlite3_open(DATABASE_FILE_LOCATION.c_str(), &localDb) != SQLITE_OK) {
+        res.set_content(createQueuePage(username,
+            "Failed to open database."), "text/html");
+        return;
+    }
+
+    std::string message;
+    bool success = addService(localDb, service_name, description, duration, priorityValue, message);
+    sqlite3_close(localDb);
+
+    if (!success) {
+        res.set_content(createQueuePage(username, message), "text/html");
+        return;
+    }
+
     res.set_redirect("/admin-dashboard");
-    });
+
+    
 
     auto* testsPtr = &tests;
 
