@@ -277,15 +277,17 @@ inline bool addToQueue(sqlite3* db, int serviceId, const std::string& name, cons
 
     // Log to history
     const char* historySQL =
-        "INSERT INTO history (user_id, action, queue_id) VALUES (?, 'JOINED_QUEUE', ?);";
-    sqlite3_stmt* histStmt;
+    "INSERT INTO history (user_id, message, queue_id, status) VALUES (?, ?, ?, 'sent');";
+sqlite3_stmt* histStmt;
 
-    if (sqlite3_prepare_v2(db, historySQL, -1, &histStmt, nullptr) == SQLITE_OK) {
-        sqlite3_bind_int(histStmt, 1, currentUserId);
-        sqlite3_bind_int(histStmt, 2, serviceId);
-        sqlite3_step(histStmt);
-        sqlite3_finalize(histStmt);
-    }
+if (sqlite3_prepare_v2(db, historySQL, -1, &histStmt, nullptr) == SQLITE_OK) {
+    std::string historyMessage = "User joined the queue";
+    sqlite3_bind_int(histStmt, 1, currentUserId);
+    sqlite3_bind_text(histStmt, 2, historyMessage.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(histStmt, 3, newQueueId);
+    sqlite3_step(histStmt);
+    sqlite3_finalize(histStmt);
+}
 
     recalculateWaitTimes(db, serviceId);
     sqlite3_exec(db, "PRAGMA wal_checkpoint(FULL);", nullptr, nullptr, nullptr);
