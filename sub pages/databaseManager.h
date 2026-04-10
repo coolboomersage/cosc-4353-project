@@ -65,8 +65,8 @@ bool initDatabase(sqlite3* db) {
         "CREATE TABLE IF NOT EXISTS accounts ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "username TEXT NOT NULL, "
-        "hash TEXT UNIQUE NOT NULL, "
-        "email TEXT NOT NULL, "
+        "hash TEXT NOT NULL, "
+        "email TEXT NOT NULL UNIQUE, "
         "auth INTEGER NOT NULL);";
 
     int rc = sqlite3_exec(db, createAccountsSQL, nullptr, nullptr, &errMsg);
