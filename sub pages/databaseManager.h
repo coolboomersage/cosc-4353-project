@@ -190,13 +190,15 @@ bool initDatabase(sqlite3* db) {
 
     // Create history table
     const char* createHistorySQL =
-        "CREATE TABLE IF NOT EXISTS history ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-        "user_id INTEGER NOT NULL, "
-        "action TEXT NOT NULL, "
-        "queue_id INTEGER NOT NULL, "
-        "FOREIGN KEY (user_id) REFERENCES accounts(id), "
-        "FOREIGN KEY (queue_id) REFERENCES queue(id));";
+    "CREATE TABLE IF NOT EXISTS history ("
+    "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+    "user_id INTEGER NOT NULL, "
+    "message TEXT NOT NULL, "
+    "timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+    "status TEXT NOT NULL DEFAULT 'sent' CHECK(status IN ('sent', 'viewed')), "
+    "queue_id INTEGER, "
+    "FOREIGN KEY (user_id) REFERENCES accounts(id), "
+    "FOREIGN KEY (queue_id) REFERENCES queue(id));";
 
     rc = sqlite3_exec(db, createHistorySQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
