@@ -261,9 +261,6 @@ inline bool addToQueue(sqlite3* db, int serviceId, const std::string& name, cons
     auto queue = getQueueByService(db, serviceId);
     int waitTime = static_cast<int>(queue.size()) * estimated;
 
-    const char* insertQueueSQL =
-        "INSERT INTO queue (service_id, position, name, reason, wait_time) VALUES (?, ?, ?, ?, 0);";
-    sqlite3_stmt* stmt;
 
     const char* insertQueueSQL =
         "INSERT INTO queue (service_id, position, name, reason, wait_time, status, created_date) "
