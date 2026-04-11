@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+
 struct QueueEntry {
     int id;
     int serviceId;
@@ -13,7 +14,11 @@ struct QueueEntry {
     std::string reason;
     int position;
     int waitTime;
+    std::string status;
+    std::string createdDate;
 };
+
+
 
 struct ServiceEntry{
     int id;
@@ -180,8 +185,11 @@ inline int getEstimatedServiceTime(sqlite3* db, int serviceId) {
 
 inline std::vector<QueueEntry> getQueueByService(sqlite3* db, int serviceId) {
     std::vector<QueueEntry> entries;
-    const char* sql = "SELECT id, service_id, position, name, reason, wait_time "
+    const char* sql = "SELECT id, service_id, position, name, reason, wait_time, status, created_date "
                       "FROM queue WHERE service_id = ? ORDER BY position ASC;";
+
+
+    
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -198,6 +206,8 @@ inline std::vector<QueueEntry> getQueueByService(sqlite3* db, int serviceId) {
         q.name       = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
         q.reason     = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
         q.waitTime   = sqlite3_column_int(stmt, 5);
+        q.status      = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+        q.createdDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
         entries.push_back(q);
     }
 
