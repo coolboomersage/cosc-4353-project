@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-
 struct QueueEntry {
     int id;
     int serviceId;
@@ -17,8 +16,6 @@ struct QueueEntry {
     std::string status;
     std::string createdDate;
 };
-
-
 
 struct ServiceEntry{
     int id;
@@ -290,16 +287,16 @@ inline bool addToQueue(sqlite3* db, int serviceId, const std::string& name, cons
     // Log to history
     const char* historySQL =
     "INSERT INTO history (user_id, message, queue_id, status) VALUES (?, ?, ?, 'sent');";
-sqlite3_stmt* histStmt;
+    sqlite3_stmt* histStmt;
 
-if (sqlite3_prepare_v2(db, historySQL, -1, &histStmt, nullptr) == SQLITE_OK) {
-    std::string historyMessage = "User joined the queue";
-    sqlite3_bind_int(histStmt, 1, currentUserId);
-    sqlite3_bind_text(histStmt, 2, historyMessage.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(histStmt, 3, newQueueId);
-    sqlite3_step(histStmt);
-    sqlite3_finalize(histStmt);
-}
+    if (sqlite3_prepare_v2(db, historySQL, -1, &histStmt, nullptr) == SQLITE_OK) {
+        std::string historyMessage = "User joined the queue";
+        sqlite3_bind_int(histStmt, 1, currentUserId);
+        sqlite3_bind_text(histStmt, 2, historyMessage.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(histStmt, 3, newQueueId);
+        sqlite3_step(histStmt);
+        sqlite3_finalize(histStmt);
+    }
 
     recalculateWaitTimes(db, serviceId);
     sqlite3_exec(db, "PRAGMA wal_checkpoint(FULL);", nullptr, nullptr, nullptr);
@@ -392,7 +389,6 @@ inline bool serveNextInQueue(sqlite3* db, int serviceId, std::string& servedName
     return true;
 }
 
-
 inline nlohmann::json queueToJson(const std::vector<QueueEntry>& entries) {
     nlohmann::json arr = nlohmann::json::array();
     for (const auto& q : entries) {
@@ -409,8 +405,6 @@ inline nlohmann::json queueToJson(const std::vector<QueueEntry>& entries) {
     }
     return arr;
 }
-
-
 
 inline int estimateWaitTimeForUser(sqlite3* db, int serviceId, int queueId) {
     int estimatedServiceTime = getEstimatedServiceTime(db, serviceId);
