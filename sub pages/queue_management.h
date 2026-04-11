@@ -265,6 +265,11 @@ inline bool addToQueue(sqlite3* db, int serviceId, const std::string& name, cons
         "INSERT INTO queue (service_id, position, name, reason, wait_time) VALUES (?, ?, ?, ?, 0);";
     sqlite3_stmt* stmt;
 
+    const char* insertQueueSQL =
+        "INSERT INTO queue (service_id, position, name, reason, wait_time, status, created_date) "
+        "VALUES (?, ?, ?, ?, 0, 'open', CURRENT_TIMESTAMP);";
+    sqlite3_stmt* stmt;
+
     if (sqlite3_prepare_v2(db, insertQueueSQL, -1, &stmt, nullptr) != SQLITE_OK) {
         message = "Failed to prepare queue insert.";
         return false;
