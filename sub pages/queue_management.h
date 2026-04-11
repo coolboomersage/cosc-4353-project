@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+
 struct QueueEntry {
     int id;
     int serviceId;
@@ -13,7 +14,11 @@ struct QueueEntry {
     std::string reason;
     int position;
     int waitTime;
+    std::string status;
+    std::string createdDate;
 };
+
+
 
 struct ServiceEntry{
     int id;
@@ -180,8 +185,11 @@ inline int getEstimatedServiceTime(sqlite3* db, int serviceId) {
 
 inline std::vector<QueueEntry> getQueueByService(sqlite3* db, int serviceId) {
     std::vector<QueueEntry> entries;
-    const char* sql = "SELECT id, service_id, position, name, reason, wait_time "
+    const char* sql = "SELECT id, service_id, position, name, reason, wait_time, status, created_date "
                       "FROM queue WHERE service_id = ? ORDER BY position ASC;";
+
+
+    
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -198,6 +206,8 @@ inline std::vector<QueueEntry> getQueueByService(sqlite3* db, int serviceId) {
         q.name       = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
         q.reason     = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
         q.waitTime   = sqlite3_column_int(stmt, 5);
+        q.status      = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+        q.createdDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
         entries.push_back(q);
     }
 
@@ -251,8 +261,10 @@ inline bool addToQueue(sqlite3* db, int serviceId, const std::string& name, cons
     auto queue = getQueueByService(db, serviceId);
     int waitTime = static_cast<int>(queue.size()) * estimated;
 
+
     const char* insertQueueSQL =
-        "INSERT INTO queue (service_id, position, name, reason, wait_time) VALUES (?, ?, ?, ?, 0);";
+        "INSERT INTO queue (service_id, position, name, reason, wait_time, status, created_date) "
+        "VALUES (?, ?, ?, ?, 0, 'open', CURRENT_TIMESTAMP);";
     sqlite3_stmt* stmt;
 
     if (sqlite3_prepare_v2(db, insertQueueSQL, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -380,6 +392,7 @@ inline bool serveNextInQueue(sqlite3* db, int serviceId, std::string& servedName
     return true;
 }
 
+
 inline nlohmann::json queueToJson(const std::vector<QueueEntry>& entries) {
     nlohmann::json arr = nlohmann::json::array();
     for (const auto& q : entries) {
@@ -388,11 +401,16 @@ inline nlohmann::json queueToJson(const std::vector<QueueEntry>& entries) {
             {"serviceId", q.serviceId},
             {"name", q.name},
             {"reason", q.reason},
-            {"waitTime", q.waitTime}
+            {"position", q.position},
+            {"waitTime", q.waitTime},
+            {"status", q.status},
+            {"createdDate", q.createdDate}
         });
     }
     return arr;
 }
+
+
 
 inline int estimateWaitTimeForUser(sqlite3* db, int serviceId, int queueId) {
     int estimatedServiceTime = getEstimatedServiceTime(db, serviceId);
