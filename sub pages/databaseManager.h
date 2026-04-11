@@ -102,8 +102,11 @@ bool initDatabase(sqlite3* db) {
         "position INTEGER NOT NULL, "
         "name TEXT NOT NULL, "
         "reason TEXT NOT NULL, "
-        "wait_time INTEGER NOT NULL, "  // in minutes
+        "wait_time INTEGER NOT NULL, "
+        "status TEXT NOT NULL DEFAULT 'open', "
+        "created_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, "
         "FOREIGN KEY (service_id) REFERENCES services(id));";
+    
 
     rc = sqlite3_exec(db, createQueueSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
