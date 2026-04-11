@@ -168,21 +168,19 @@ bool initDatabase(sqlite3* db) {
 
     // Seed queue table — relies on services being inserted with IDs 1, 2, 3
     const char* insertQueueSQL =
-        "INSERT INTO queue (service_id, position, name, reason, wait_time) VALUES "
-        // Advising (service_id = 1)
-        "(1, 1, 'Alice Johnson',  'Course registration help', 2),  "
-        "(1, 2, 'Bob Smith',      'Degree audit question',    7),  "
-        "(1, 3, 'Carol Williams', 'Transfer credit inquiry',  13), "
-        "(1, 4, 'David Lee',      'Scholarship advising',     18), "
-        "(1, 5, 'Eva Martinez',   'General advising',         24), "
-        // Tutoring (service_id = 2)
-        "(2, 1, 'Frank Brown',   'Calculus II help',      3),  "
-        "(2, 2, 'Grace Kim',     'Python debugging',      9),  "
-        "(2, 3, 'Henry Davis',   'Linear algebra review', 15), "
-        "(2, 4, 'Isla Thompson', 'Essay feedback',        20), "
-        // Tech Support (service_id = 3)
-        "(3, 1, 'Jack Wilson', 'VPN setup issue',    5),  "
-        "(3, 2, 'Karen Moore', 'Printer not working', 11);";
+        "INSERT INTO queue (service_id, position, name, reason, wait_time, status, created_date) VALUES "
+        "(1, 1, 'Alice Johnson',  'Course registration help', 2,  'open', DATE('now')),  "
+        "(1, 2, 'Bob Smith',      'Degree audit question',    7,  'open', DATE('now')),  "
+        "(1, 3, 'Carol Williams', 'Transfer credit inquiry',  13, 'open', DATE('now')), "
+        "(1, 4, 'David Lee',      'Scholarship advising',     18, 'open', DATE('now')), "
+        "(1, 5, 'Eva Martinez',   'General advising',         24, 'open', DATE('now')), "
+        "(2, 1, 'Frank Brown',    'Calculus II help',         3,  'open', DATE('now')), "
+        "(2, 2, 'Grace Kim',      'Python debugging',         9,  'open', DATE('now')), "
+        "(2, 3, 'Henry Davis',    'Linear algebra review',    15, 'open', DATE('now')), "
+        "(2, 4, 'Isla Thompson',  'Essay feedback',           20, 'open', DATE('now')), "
+        "(3, 1, 'Jack Wilson',    'VPN setup issue',          5,  'open', DATE('now')), "
+        "(3, 2, 'Karen Moore',    'Printer not working',      11, 'open', DATE('now'));";
+    
 
     rc = sqlite3_exec(db, insertQueueSQL, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
