@@ -390,6 +390,7 @@ inline bool serveNextInQueue(sqlite3* db, int serviceId, std::string& servedName
     return true;
 }
 
+
 inline nlohmann::json queueToJson(const std::vector<QueueEntry>& entries) {
     nlohmann::json arr = nlohmann::json::array();
     for (const auto& q : entries) {
@@ -398,11 +399,16 @@ inline nlohmann::json queueToJson(const std::vector<QueueEntry>& entries) {
             {"serviceId", q.serviceId},
             {"name", q.name},
             {"reason", q.reason},
-            {"waitTime", q.waitTime}
+            {"position", q.position},
+            {"waitTime", q.waitTime},
+            {"status", q.status},
+            {"createdDate", q.createdDate}
         });
     }
     return arr;
 }
+
+
 
 inline int estimateWaitTimeForUser(sqlite3* db, int serviceId, int queueId) {
     int estimatedServiceTime = getEstimatedServiceTime(db, serviceId);
