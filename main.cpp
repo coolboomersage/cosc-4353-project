@@ -10,6 +10,7 @@
 #include "sub pages/user_dashboard.h"
 #include "sub pages/service_management.h"
 #include "sub pages/queue_management.h"
+#include "sub pages/export report.h"
 
 inline void addTests(std::vector<UnitTestBase*> &tests){
     tests.push_back(new UnitTest<bool, std::string, 1>(
@@ -589,6 +590,50 @@ int main() {
     sqlite3_close(db);
 
     res.set_content(R"({"success":true})", "application/json");
+});
+
+    server.Post("/admin/export-report", [&db](const httplib::Request&, httplib::Response& res) {
+    // Auth check — mirror the admin-dashboard guard
+    if (currentUserId == 0) {
+        res.status = 401;
+        res.set_content("Unauthorized", "text/plain");
+        return;
+    }
+    if (getAuthLevelById(currentUserId) < 2) {
+        res.status = 403;
+        res.set_content("Forbidden: Admins only", "text/plain");
+        return;
+    }
+
+    // Build a unique temp path so concurrent exports don't collide
+    const std::string outputPath = "queue_report_" 
+                                 + std::to_string(std::time(nullptr)) 
+                                 + ".xlsx";
+
+    if (!exportDatabaseReport(db, outputPath)) {
+        res.status = 500;
+        res.set_content("Failed to generate report.", "text/plain");
+        return;
+    }
+
+    // Read the file into memory
+    std::ifstream file(outputPath, std::ios::binary);
+    if (!file) {
+        res.status = 500;
+        res.set_content("Report file could not be opened after generation.", "text/plain");
+        return;
+    }
+
+    std::string fileData((std::istreambuf_iterator<char>(file)),
+                          std::istreambuf_iterator<char>());
+    file.close();
+
+    // Clean up the temp file
+    std::remove(outputPath.c_str());
+
+    // Send as a downloadable xlsx attachment
+    res.set_header("Content-Disposition", "attachment; filename=\"queue_report.xlsx\"");
+    res.set_content(fileData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 });
 
     server.Get("/", [](const httplib::Request&, httplib::Response& res) {

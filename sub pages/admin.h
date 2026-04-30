@@ -409,16 +409,27 @@ static inline std::string adminDashboardPage(const std::string& username) {
     .pill.closed { background:#fee2e2; color:#991b1b; }
 
     .log-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .log-header-left { flex: 1; }
+    .log-header-actions { display:flex; gap:6px; align-items:center; }
     .log { background: #0b1220; color:#e5e7eb; padding: 14px; border-radius: 12px; height: 220px; overflow:auto;
            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono"; font-size: 12px; }
     .log div { margin-bottom: 8px; }
     .topbar { display:flex; justify-content:space-between; align-items:center; margin-top: 16px; }
 
+    /* ── Unit Tests button ── */
     .btn-tests { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:7px;
                  background:#1e1b4b; color:#a5b4fc; border:1px solid #3730a3; font-size:12px;
                  cursor:pointer; text-decoration:none; font-family:inherit; }
     .btn-tests:hover { background:#312e81; color:#c7d2fe; }
     .btn-tests svg { flex-shrink:0; }
+
+    /* ── Export Report button ── */
+    .btn-export { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:7px;
+                  background:#064e3b; color:#6ee7b7; border:1px solid #065f46; font-size:12px;
+                  cursor:pointer; font-family:inherit; transition: background 0.12s, color 0.12s; }
+    .btn-export:hover:not(:disabled) { background:#065f46; color:#a7f3d0; }
+    .btn-export:disabled { opacity:0.55; cursor:not-allowed; }
+    .btn-export svg { flex-shrink:0; }
 
     /* Modal Overlay */
     .modal-overlay {
@@ -526,17 +537,28 @@ static inline std::string adminDashboardPage(const std::string& username) {
       <!-- ── System Log widget ── -->
       <div class="card">
         <div class="log-header">
-          <div>
+          <div class="log-header-left">
             <div style="font-weight:700;">System Log</div>
             <div class="muted">Live cout output</div>
           </div>
-          <!-- Unit Tests button -->
-          <a href="/admin/unit-tests" class="btn-tests">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            Unit Tests
-          </a>
+          <div class="log-header-actions">
+            <!-- Unit Tests button -->
+            <a href="/admin/unit-tests" class="btn-tests">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Unit Tests
+            </a>
+            <!-- Export Report button -->
+            <button class="btn-export" id="exportBtn" onclick="exportReport()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Export Report
+            </button>
+          </div>
         </div>
         <div class="log" id="systemLog">
           )HTML" + logHtml + R"HTML(
@@ -672,9 +694,58 @@ static inline std::string adminDashboardPage(const std::string& username) {
       });
       dragSrcIndex = null;
     }
+
     function saveQueueOrder() {
       alert('Queue order saved! (no databse call made, change is only local)');
       closeQueueModal();
+    }
+
+    // ── Export Report ──────────────────────────────────────────────────────────
+    // POSTs to /admin/export-report. The server calls exportDatabaseReport(),
+    // writes the xlsx to a temp path, then responds with the raw file bytes and
+    // Content-Disposition: attachment so the browser saves it automatically.
+    async function exportReport() {
+      const btn = document.getElementById('exportBtn');
+      const originalHTML = btn.innerHTML;
+
+      btn.disabled = true;
+      btn.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Exporting…`;
+
+      try {
+        const res = await fetch('/admin/export-report', { method: 'POST' });
+
+        if (!res.ok) {
+          // Surface any plain-text error message from the server
+          const msg = await res.text().catch(() => '');
+          throw new Error(msg || 'Server returned HTTP ' + res.status);
+        }
+
+        // Read the xlsx bytes and trigger a browser download
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+
+        // Build a timestamped filename so repeated exports don't collide
+        const ts   = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        a.download = 'queue_report_' + ts + '.xlsx';
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+      } catch (err) {
+        alert('Export failed:\n' + err.message);
+      } finally {
+        btn.disabled  = false;
+        btn.innerHTML = originalHTML;
+      }
     }
   </script>
 </body>
