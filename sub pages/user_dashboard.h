@@ -3,7 +3,7 @@
 
 #include <string>
 
-// UI-only User Dashboard page (static placeholder data)
+// User Dashboard page with queue status, database-backed queue records, and notifications
 static inline std::string userDashboardPage(const std::string& username) {
 
   sqlite3* db = nullptr;
@@ -207,7 +207,7 @@ static inline std::string userDashboardPage(const std::string& username) {
 
     <div class="card" style="margin-top:16px;">
       <div style="font-weight:700;">History</div>
-      <div class="muted" style="margin-bottom:10px;">Live data from your account</div>
+      <div class="muted" style="margin-bottom:10px;">Queue activity history for your account</div>
       <table>
         <thead>
           <tr>
