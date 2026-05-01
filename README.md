@@ -15,6 +15,14 @@ A C++ web server application built for COSC 4353 (Software Design) that allows u
 
 ---
 
+## Smart Feature: Dynamic Wait-Time Estimation
+
+QueueSmart includes a dynamic wait-time estimation feature. Each service stores an estimated service time in the database. When a user joins a queue, the system uses the service’s estimated duration and the user’s queue position to calculate the expected wait time. Queue wait times are also recalculated when queue entries change, helping users and administrators see a more accurate estimate of how long each person may wait.
+
+This feature improves the queue management process by giving users clearer expectations and helping administrators monitor service demand.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -52,6 +60,11 @@ cmake --build build
 
 ```bash
 ./build/serverExe
+```
+or
+
+```bash
+./build/server
 ```
 
 The server will start and serve the application pages from the `sub pages/` directory.
