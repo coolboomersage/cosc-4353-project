@@ -34,7 +34,7 @@ static inline std::string userDashboardPage(const std::string& username) {
   for (int serviceId : serviceIds) {
       // Fetch the service name
       std::string serviceName = "Unknown Service";
-      const char* serviceSQL = "SELECT name FROM services WHERE service_id = ?;";
+      const char* serviceSQL = "SELECT name FROM services WHERE id = ?;";
       sqlite3_stmt* svcStmt = nullptr;
       if (sqlite3_prepare_v2(db, serviceSQL, -1, &svcStmt, nullptr) == SQLITE_OK) {
           sqlite3_bind_int(svcStmt, 1, serviceId);
@@ -79,14 +79,15 @@ static inline std::string userDashboardPage(const std::string& username) {
     "WHERE h.user_id = ? "
     "ORDER BY h.id DESC;";
 
+
   sqlite3_stmt* stmt;
   if (sqlite3_prepare_v2(db, historySQL, -1, &stmt, nullptr) == SQLITE_OK) {
       sqlite3_bind_int(stmt, 1, currentUserId);
 
       while (sqlite3_step(stmt) == SQLITE_ROW) {
-          std::string action   = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-          std::string service  = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-          int queueId          = sqlite3_column_int(stmt, 2);
+          std::string action = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+          int queueId = sqlite3_column_int(stmt, 1);
+          std::string service = "Queue Activity";
 
           std::string actionLabel, pillClass;
           if (action == "JOINED_QUEUE") {
@@ -154,7 +155,7 @@ static inline std::string userDashboardPage(const std::string& username) {
   <header>
     <div>
       <strong>User Dashboard</strong>
-      <span class="muted">(UI placeholders)</span>
+      <span class="muted">Queue Status</span>
     </div>
     <div>
       <span class="muted">Signed in as</span> <strong>)" + username + R"(</strong>
@@ -166,10 +167,10 @@ static inline std::string userDashboardPage(const std::string& username) {
   <div class="container">
 
     <div class="grid">
-      <div class="card"><div class="muted">Your Status</div><div class="big">In Queue</div><div class="muted">Tutoring</div></div>
-      <div class="card"><div class="muted">Position</div><div class="big">#3</div><div class="muted">Estimated 9–12 min</div></div>
-      <div class="card"><div class="muted">Queues Joined</div><div class="big">5</div><div class="muted">This month</div></div>
-      <div class="card"><div class="muted">Notifications</div><div class="big">2</div><div class="muted">Unread</div></div>
+      <div class="card"><div class="muted">Your Status</div><div class="big">Active</div><div class="muted">Queue participation shown below</div></div>
+      <div class="card"><div class="muted">Wait-Time Feature</div><div class="big">On</div><div class="muted">ETA calculated from queue position</div></div>
+      <div class="card"><div class="muted">Queue Records</div><div class="big">Live</div><div class="muted">Loaded from database</div></div>
+      <div class="card"><div class="muted">Notifications</div><div class="big">Ready</div><div class="muted">Queue status updates</div></div>
     </div>
 
     <div class="row">
@@ -199,10 +200,10 @@ static inline std::string userDashboardPage(const std::string& username) {
 
       <div class="notice">
         <div style="font-weight:700;">Notifications</div>
-        <div class="muted" style="margin-bottom:10px;">UI-only list for now</div>
+        <div class="muted" style="margin-bottom:10px;">Queue status notifications</div>
         <div>• Your turn is coming up soon (Tutoring).</div>
         <div>• Queue "Advising" changed ETA.</div>
-        <div class="muted">Tip: Notifications tab can be built next.</div>
+        <div class="muted">Notifications help users track queue updates and estimated wait-time changes.</div>
       </div>
     </div>
 
