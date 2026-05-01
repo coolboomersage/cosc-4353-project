@@ -72,10 +72,8 @@ static inline std::string userDashboardPage(const std::string& username) {
   std::string historyRows;
 
   const char* historySQL =
-    "SELECT h.action, COALESCE(s.name, 'Unknown Service'), h.queue_id "
+    "SELECT h.message, h.queue_id "
     "FROM history h "
-    "LEFT JOIN queue q ON h.queue_id = q.id "
-    "LEFT JOIN services s ON q.service_id = s.id "
     "WHERE h.user_id = ? "
     "ORDER BY h.id DESC;";
 
