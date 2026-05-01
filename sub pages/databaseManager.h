@@ -121,7 +121,7 @@ bool initDatabase(sqlite3* db) {
     // Insert default root account
     std::string defaultPasswordHash = hashPassword("root123");
     std::string insertDefaultSQL =
-        "INSERT INTO accounts (username, hash, email, auth) VALUES ('root', '"
+        "INSERT OR IGNORE INTO accounts (username, hash, email, auth) VALUES ('root', '"
         + defaultPasswordHash + "', 'root@root', 3);";
 
     rc = sqlite3_exec(db, insertDefaultSQL.c_str(), nullptr, nullptr, &errMsg);
@@ -175,7 +175,6 @@ bool initDatabase(sqlite3* db) {
 
     const char* insertQueueSQL =
         "INSERT INTO queue (service_id, position, name, reason, wait_time, status, created_date) "
-        "SELECT * FROM (VALUES "
         "(1, 1, 'Alice Johnson',  'Course registration help', 0,  'open', DATE('now')),  "
         "(1, 2, 'Bob Smith',      'Degree audit question',    20, 'open', DATE('now')),  "
         "(1, 3, 'Carol Williams', 'Transfer credit inquiry',  40, 'open', DATE('now')), "
