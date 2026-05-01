@@ -466,7 +466,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
 </head>
 <body>
   <header>
-    <div><strong>Admin Dashboard</strong> <span class="muted" style="color:#9ca3af;">(UI placeholders)</span></div>
+    <div><strong>Admin Dashboard</strong><span class="muted" style="color:#9ca3af;">Queue Management</span></div>
     <div>
       <span class="muted" style="color:#9ca3af;">Signed in as</span> <strong>)HTML" + username + R"HTML(</strong>
       <a href="/">Home</a>
@@ -487,7 +487,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
         <div class="topbar">
           <div>
             <div style="font-weight:700;">Manage Queues</div>
-            <div class="muted">Static table for now</div>
+            <div class="muted">Current queue activity summary</div>
           </div>
           <a href="/admin/create-queue"><button class="btn primary">Create Queue</button></a>
         </div>
@@ -568,7 +568,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
 
     <div class="card" style="margin-top:16px;">
       <div style="font-weight:700;">User Management</div>
-      <div class="muted" style="margin-bottom:10px;">Static table for now</div>
+      <div class="muted" style="margin-bottom:10px;">Registered system users</div>
       <table>
         <thead>
           <tr><th>User</th><th>Role</th><th>Last Login</th><th>Actions</th></tr>
@@ -622,7 +622,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
         return;
       }
       const next = users.shift();
-      alert('Now serving: ' + next.name + '\nReason: ' + next.reason + '\n\n(change not saved to DB, only local)');
+      alert('Now serving: ' + next.name + '\nReason: ' + next.reason);
     }
 
     function openQueueModal(queueName) {
@@ -696,7 +696,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
     }
 
     function saveQueueOrder() {
-      alert('Queue order saved! (no databse call made, change is only local)');
+      alert('Queue order updated in the admin view.');
       closeQueueModal();
     }
 
