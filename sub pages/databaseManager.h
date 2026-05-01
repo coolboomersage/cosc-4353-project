@@ -171,10 +171,11 @@ bool initDatabase(sqlite3* db) {
 
 
     // Seed queue table — relies on services being inserted with IDs 1, 2, 3
-    sqlite3_exec(db, "DELETE FROM queue;", nullptr, nullptr, nullptr);
+    // sqlite3_exec(db, "DELETE FROM queue;", nullptr, nullptr, nullptr);
 
     const char* insertQueueSQL =
-        "INSERT INTO queue (service_id, position, name, reason, wait_time, status, created_date) VALUES "
+        "INSERT INTO queue (service_id, position, name, reason, wait_time, status, created_date) "
+        "SELECT * FROM (VALUES "
         "(1, 1, 'Alice Johnson',  'Course registration help', 0,  'open', DATE('now')),  "
         "(1, 2, 'Bob Smith',      'Degree audit question',    20, 'open', DATE('now')),  "
         "(1, 3, 'Carol Williams', 'Transfer credit inquiry',  40, 'open', DATE('now')), "
@@ -185,7 +186,8 @@ bool initDatabase(sqlite3* db) {
         "(2, 3, 'Henry Davis',    'Linear algebra review',    60, 'open', DATE('now')), "
         "(2, 4, 'Isla Thompson',  'Essay feedback',           90, 'open', DATE('now')), "
         "(3, 1, 'Jack Wilson',    'VPN setup issue',          0,  'open', DATE('now')), "
-        "(3, 2, 'Karen Moore',    'Printer not working',      15, 'open', DATE('now'));";
+        "(3, 2, 'Karen Moore',    'Printer not working',      15, 'open', DATE('now')) "
+        ") WHERE NOT EXISTS (SELECT 1 FROM queue);";
  
     
 
