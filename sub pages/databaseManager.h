@@ -105,7 +105,10 @@ bool initDatabase(sqlite3* db) {
         "wait_time INTEGER NOT NULL, "
         "status TEXT NOT NULL DEFAULT 'open', "
         "created_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+        "joined_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+        "served_at TEXT, "
         "FOREIGN KEY (service_id) REFERENCES services(id));";
+
     
 
     rc = sqlite3_exec(db, createQueueSQL, nullptr, nullptr, &errMsg);
@@ -166,20 +169,22 @@ bool initDatabase(sqlite3* db) {
     sqlite3_exec(db, triggerInsertSQL, nullptr, nullptr, nullptr);
     sqlite3_exec(db, triggerDeleteSQL, nullptr, nullptr, nullptr);
 
+
     // Seed queue table — relies on services being inserted with IDs 1, 2, 3
     const char* insertQueueSQL =
-        "INSERT INTO queue (service_id, position, name, reason, wait_time, status, created_date) VALUES "
-        "(1, 1, 'Alice Johnson',  'Course registration help', 2,  'open', DATE('now')),  "
-        "(1, 2, 'Bob Smith',      'Degree audit question',    7,  'open', DATE('now')),  "
-        "(1, 3, 'Carol Williams', 'Transfer credit inquiry',  13, 'open', DATE('now')), "
-        "(1, 4, 'David Lee',      'Scholarship advising',     18, 'open', DATE('now')), "
-        "(1, 5, 'Eva Martinez',   'General advising',         24, 'open', DATE('now')), "
-        "(2, 1, 'Frank Brown',    'Calculus II help',         3,  'open', DATE('now')), "
-        "(2, 2, 'Grace Kim',      'Python debugging',         9,  'open', DATE('now')), "
-        "(2, 3, 'Henry Davis',    'Linear algebra review',    15, 'open', DATE('now')), "
-        "(2, 4, 'Isla Thompson',  'Essay feedback',           20, 'open', DATE('now')), "
-        "(3, 1, 'Jack Wilson',    'VPN setup issue',          5,  'open', DATE('now')), "
-        "(3, 2, 'Karen Moore',    'Printer not working',      11, 'open', DATE('now'));";
+        "INSERT OR IGNORE INTO queue (service_id, position, name, reason, wait_time, status, created_date) VALUES "
+        "(1, 1, 'Alice Johnson',  'Course registration help', 0,  'open', DATE('now')),  "
+        "(1, 2, 'Bob Smith',      'Degree audit question',    20, 'open', DATE('now')),  "
+        "(1, 3, 'Carol Williams', 'Transfer credit inquiry',  40, 'open', DATE('now')), "
+        "(1, 4, 'David Lee',      'Scholarship advising',     60, 'open', DATE('now')), "
+        "(1, 5, 'Eva Martinez',   'General advising',         80, 'open', DATE('now')), "
+        "(2, 1, 'Frank Brown',    'Calculus II help',         0,  'open', DATE('now')), "
+        "(2, 2, 'Grace Kim',      'Python debugging',         30, 'open', DATE('now')), "
+        "(2, 3, 'Henry Davis',    'Linear algebra review',    60, 'open', DATE('now')), "
+        "(2, 4, 'Isla Thompson',  'Essay feedback',           90, 'open', DATE('now')), "
+        "(3, 1, 'Jack Wilson',    'VPN setup issue',          0,  'open', DATE('now')), "
+        "(3, 2, 'Karen Moore',    'Printer not working',      15, 'open', DATE('now'));";
+ 
     
 
     rc = sqlite3_exec(db, insertQueueSQL, nullptr, nullptr, &errMsg);
