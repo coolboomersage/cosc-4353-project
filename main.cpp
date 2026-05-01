@@ -161,21 +161,91 @@ int main() {
         res.set_content(calenderPageData(), "text/html");
     };
 
+    
     auto handleActiveQueues = [](const httplib::Request&, httplib::Response& res) {
-        res.set_content("Active Queues page - Coming soon!", "text/plain");
-    };
+    res.set_content(activeQueuesPage(), "text/html");
+};
 
     auto handleJoinQueue = [](const httplib::Request&, httplib::Response& res) {
         res.set_content(joinQueuePage(), "text/html");
     };
 
+
     auto handleAnalytics = [](const httplib::Request&, httplib::Response& res) {
-        res.set_content("Analytics page - Coming soon!", "text/plain");
-    };
+    res.set_content(R"HTML(
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Queue Analytics</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; color: #111827; }
+    .container { max-width: 900px; margin: 60px auto; padding: 24px; }
+    .card { background: white; padding: 24px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 16px; }
+    h1 { margin-top: 0; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .big { font-size: 28px; font-weight: 700; color: #16a34a; }
+    a { color: #111827; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p><a href="/admin-dashboard">← Back to Admin Dashboard</a></p>
+    <div class="card">
+      <h1>Queue Analytics</h1>
+      <p>This page summarizes queue usage patterns for administrators.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><div>Total Active Queues</div><div class="big">3</div></div>
+      <div class="card"><div>People Waiting</div><div class="big">11</div></div>
+      <div class="card"><div>Average Wait</div><div class="big">~50 min</div></div>
+    </div>
+  </div>
+</body>
+</html>
+)HTML", "text/html");
+};
+
+
 
     auto handleEditData = [](const httplib::Request&, httplib::Response& res) {
-        res.set_content("Edit Data page - Coming soon!", "text/plain");
-    };
+    res.set_content(R"HTML(
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Edit Queue Data</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; color: #111827; }
+    .container { max-width: 900px; margin: 60px auto; padding: 24px; }
+    .card { background: white; padding: 24px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    a { color: #111827; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p><a href="/admin-dashboard">← Back to Admin Dashboard</a></p>
+    <div class="card">
+      <h1>Edit Queue Data</h1>
+      <p>Administrators can review service records and queue information from this page.</p>
+      <table>
+        <thead>
+          <tr><th>Service</th><th>Estimated Service Time</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Advising</td><td>20 min</td><td>Active</td></tr>
+          <tr><td>Tutoring</td><td>30 min</td><td>Active</td></tr>
+          <tr><td>Tech Support</td><td>15 min</td><td>Active</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
+)HTML", "text/html");
+};
 
     auto handleLogin = [](const httplib::Request&, httplib::Response& res) {
         if (currentUserId != 0) {
@@ -187,9 +257,37 @@ int main() {
         }
     };
 
+
+
     auto handleAccountSettings = [](const httplib::Request&, httplib::Response& res) {
-        res.set_content("Account Settings page - Coming soon!", "text/plain");
-    };
+    res.set_content(R"HTML(
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Account Settings</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #1f1f33; color: #f5f5f5; }
+    .container { max-width: 700px; margin: 60px auto; padding: 24px; }
+    .card { background: #302f49; padding: 24px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+    h1 { color: #4ade80; }
+    .muted { color: #b7b7cc; }
+    a { color: #4ade80; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p><a href="/dashboard">← Back to Dashboard</a></p>
+    <div class="card">
+      <h1>Account Settings</h1>
+      <p class="muted">Signed-in users can view their account role and queue activity from the dashboard.</p>
+      <p>This page supports the account management part of QueueSmart and provides a place for future profile updates.</p>
+    </div>
+  </div>
+</body>
+</html>
+)HTML", "text/html");
+};
 
     // Register routes
     server.Get("/calendar", handleCalendar);
