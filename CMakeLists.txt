@@ -40,6 +40,11 @@ add_library(zlib STATIC
 
 target_include_directories(zlib PUBLIC ${ZLIB_DIR})
 
+if(APPLE)
+    target_compile_definitions(zlib PRIVATE _LARGEFILE64_SOURCE)
+    target_compile_options(zlib PRIVATE -Wno-implicit-function-declaration)
+endif()
+
 if(MSVC)
     target_compile_options(zlib PRIVATE /W0)
 endif()
