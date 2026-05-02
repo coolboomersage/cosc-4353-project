@@ -68,46 +68,76 @@ static inline std::string userDashboardPage(const std::string& username) {
       activeQueueRows = "<tr><td colspan=\"4\" class=\"muted\">You are not currently in any queues.</td></tr>";
   }
 
-  // Build history rows by querying the history table
+ 
+    // Build history rows by querying the history table
   std::string historyRows;
-
-  const char* historySQL =
-    "SELECT h.message, h.queue_id "
-    "FROM history h "
-    "WHERE h.user_id = ? "
-    "ORDER BY h.id DESC;";
-
-
-  sqlite3_stmt* stmt;
-  if (sqlite3_prepare_v2(db, historySQL, -1, &stmt, nullptr) == SQLITE_OK) {
-      sqlite3_bind_int(stmt, 1, currentUserId);
-
-      while (sqlite3_step(stmt) == SQLITE_ROW) {
-          std::string action = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-          int queueId = sqlite3_column_int(stmt, 1);
-          std::string service = "Queue Activity";
-
-          std::string actionLabel, pillClass;
-          if (action == "JOINED_QUEUE") {
-              actionLabel = "Joined";
-              pillClass   = "inqueue";
-          } else if (action == "REMOVED_FROM_QUEUE") {
-              actionLabel = "Left / Removed";
-              pillClass   = "done";
-          } else {
-              actionLabel = action;
-              pillClass   = "waiting";
-          }
-
-          historyRows +=
-              "<tr>"
-              "<td>" + service + "</td>"
-              "<td><span class=\"pill " + pillClass + "\">" + actionLabel + "</span></td>"
-              "<td>" + std::to_string(queueId) + "</td>"
-              "</tr>";
+  
+  // First, find the current user's account ID from their username
+  int currentUserId = -1;
+  
+  const char* userIdSQL = "SELECT id FROM accounts WHERE username = ?;";
+  sqlite3_stmt* userStmt = nullptr;
+  
+  if (sqlite3_prepare_v2(db, userIdSQL, -1, &userStmt, nullptr) == SQLITE_OK) {
+      sqlite3_bind_text(userStmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
+  
+      if (sqlite3_step(userStmt) == SQLITE_ROW) {
+          currentUserId = sqlite3_column_int(userStmt, 0);
       }
-      sqlite3_finalize(stmt);
+  
+      sqlite3_finalize(userStmt);
   }
+  
+  if (currentUserId != -1) {
+      const char* historySQL =
+          "SELECT h.message, h.queue_id "
+          "FROM history h "
+          "WHERE h.user_id = ? "
+          "ORDER BY h.id DESC;";
+  
+      sqlite3_stmt* stmt = nullptr;
+  
+      if (sqlite3_prepare_v2(db, historySQL, -1, &stmt, nullptr) == SQLITE_OK) {
+          sqlite3_bind_int(stmt, 1, currentUserId);
+  
+          while (sqlite3_step(stmt) == SQLITE_ROW) {
+              const unsigned char* actionText = sqlite3_column_text(stmt, 0);
+              std::string action = actionText ? reinterpret_cast<const char*>(actionText) : "";
+  
+              int queueId = sqlite3_column_int(stmt, 1);
+              std::string service = "Queue Activity";
+  
+              std::string actionLabel, pillClass;
+  
+              if (action.find("JOINED_QUEUE") != std::string::npos ||
+                  action.find("join") != std::string::npos ||
+                  action.find("Joined") != std::string::npos) {
+                  actionLabel = "Joined";
+                  pillClass = "inqueue";
+              } else if (action.find("REMOVED_FROM_QUEUE") != std::string::npos ||
+                         action.find("remove") != std::string::npos ||
+                         action.find("left") != std::string::npos ||
+                         action.find("served") != std::string::npos ||
+                         action.find("Removed") != std::string::npos) {
+                  actionLabel = "Left / Served";
+                  pillClass = "done";
+              } else {
+                  actionLabel = action;
+                  pillClass = "waiting";
+              }
+  
+              historyRows +=
+                  "<tr>"
+                  "<td>" + service + "</td>"
+                  "<td><span class=\"pill " + pillClass + "\">" + actionLabel + "</span></td>"
+                  "<td>" + std::to_string(queueId) + "</td>"
+                  "</tr>";
+          }
+  
+          sqlite3_finalize(stmt);
+      }
+  }
+
 
   if (historyRows.empty()) {
       historyRows = "<tr><td colspan=\"3\" class=\"muted\">No history found.</td></tr>";
