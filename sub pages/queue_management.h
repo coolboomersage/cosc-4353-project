@@ -255,13 +255,18 @@ inline bool addToQueue(sqlite3* db, int serviceId, const std::string& name, cons
         return false;
     }
 
+
     auto queue = getQueueByService(db, serviceId);
-    int waitTime = static_cast<int>(queue.size()) * estimated;
+    
+    int position = static_cast<int>(queue.size()) + 1;
+    int waitTime = (position - 1) * estimated;
 
 
     const char* insertQueueSQL =
         "INSERT INTO queue (service_id, position, name, reason, wait_time, status, created_date) "
-        "VALUES (?, ?, ?, ?, 0, 'open', CURRENT_TIMESTAMP);";
+        "VALUES (?, ?, ?, ?, ?, 'open', CURRENT_TIMESTAMP);";
+
+
     sqlite3_stmt* stmt;
 
     if (sqlite3_prepare_v2(db, insertQueueSQL, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -270,9 +275,10 @@ inline bool addToQueue(sqlite3* db, int serviceId, const std::string& name, cons
     }
 
     sqlite3_bind_int(stmt, 1, serviceId);
-    sqlite3_bind_int(stmt, 2, getServiceLengthById(db, serviceId));
+    sqlite3_bind_int(stmt, 2, position);
     sqlite3_bind_text(stmt, 3, getUsernameById(currentUserId).c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 4, reason.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 5, waitTime);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
         message = "Failed to insert into queue.";
@@ -357,7 +363,7 @@ inline bool removeFromQueue(sqlite3* db, int queueId, std::string& message) {
 }
 
 inline bool serveNextInQueue(sqlite3* db, int serviceId, std::string& servedName, std::string& message) {
-    const char* sql = "SELECT id, name FROM queue WHERE service_id = ? ORDER BY id ASC LIMIT 1;";
+    const char* sql = "SELECT id, name FROM queue WHERE service_id = ? ORDER BY position ASC LIMIT 1;";
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -416,7 +422,7 @@ inline int estimateWaitTimeForUser(sqlite3* db, int serviceId, int queueId) {
 
     for (size_t i = 0; i < queue.size(); i++) {
         if (queue[i].id == queueId) {
-            return queue[i].position * estimatedServiceTime;
+            return (queue[i].position - 1) * estimatedServiceTime;
         }
     }
 

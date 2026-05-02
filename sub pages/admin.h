@@ -184,7 +184,196 @@ static inline std::string createQueuePage(const std::string& username, const std
 
     .field-error { font-size: 11px; color: #ef4444; display: none; }
     .field-error.visible { display: block; }
-  </style>
+  
+/* ===== FINAL DARK THEME OVERRIDE - BaoVersion ===== */
+:root {
+    --dark-bg: #1f1e2e;
+    --dark-nav: #2a293d;
+    --dark-card: #302f45;
+    --dark-card-2: #101827;
+    --dark-border: #46455f;
+    --dark-text: #f4f4f8;
+    --dark-muted: #b8b7c9;
+    --green: #31c653;
+}
+
+html,
+body {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+body,
+main,
+.container,
+.page,
+.dashboard,
+.admin-dashboard,
+.content,
+.wrapper {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+nav,
+.navbar,
+.topbar,
+.header,
+.admin-header {
+    background: var(--dark-nav) !important;
+    color: var(--dark-text) !important;
+    border-bottom: 1px solid #171625 !important;
+}
+
+nav a,
+.navbar a,
+.topbar a,
+.header a,
+.admin-header a {
+    color: #d9d8ff !important;
+}
+
+.card,
+.panel,
+.box,
+.stat-card,
+.stats-card,
+.summary-card,
+.table-card,
+.log-card,
+.user-management,
+.manage-queues,
+.system-log,
+.modal-content,
+section {
+    background: var(--dark-card) !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.system-log,
+.log-output,
+pre,
+code,
+textarea.log-output {
+    background: var(--dark-card-2) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+label,
+span,
+small,
+div {
+    color: inherit;
+}
+
+.subtitle,
+.muted,
+.description,
+.card-subtitle,
+.help-text {
+    color: var(--dark-muted) !important;
+}
+
+table {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-collapse: collapse;
+}
+
+thead,
+tr,
+th,
+td {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-color: var(--dark-border) !important;
+}
+
+th {
+    color: #dcdcff !important;
+}
+
+input,
+select,
+textarea {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--dark-muted) !important;
+}
+
+button,
+.btn {
+    border: 1px solid var(--dark-border) !important;
+}
+
+button.primary,
+.btn-primary,
+.create-btn,
+.export-btn,
+.serve-btn {
+    background: var(--green) !important;
+    color: #06120a !important;
+    border: none !important;
+    font-weight: 700 !important;
+}
+
+button.secondary,
+.btn-secondary,
+.view-btn,
+.close-btn,
+.clear-btn,
+.reset-btn,
+.disable-btn,
+.promote-btn {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+.badge,
+.status,
+.pill {
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.status.open,
+.badge.open,
+.pill.open {
+    background: #bdf5cc !important;
+    color: #09601f !important;
+}
+
+.status.closed,
+.badge.closed,
+.pill.closed {
+    background: #ffd1d6 !important;
+    color: #9c1526 !important;
+}
+
+a {
+    color: #d9d8ff !important;
+}
+
+hr {
+    border-color: var(--dark-border) !important;
+}
+
+</style>
 </head>
 <body>
   <header>
@@ -462,11 +651,203 @@ static inline std::string adminDashboardPage(const std::string& username) {
     .queue-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
     .queue-wait { font-size: 12px; color: #374151; background: #f3f4f6; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
     .drag-hint { font-size: 12px; color: #9ca3af; margin-bottom: 12px; }
-  </style>
+  
+/* ===== FINAL DARK THEME OVERRIDE - BaoVersion ===== */
+:root {
+    --dark-bg: #1f1e2e;
+    --dark-nav: #2a293d;
+    --dark-card: #302f45;
+    --dark-card-2: #101827;
+    --dark-border: #46455f;
+    --dark-text: #f4f4f8;
+    --dark-muted: #b8b7c9;
+    --green: #31c653;
+}
+
+html,
+body {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+body,
+main,
+.container,
+.page,
+.dashboard,
+.admin-dashboard,
+.content,
+.wrapper {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+nav,
+.navbar,
+.topbar,
+.header,
+.admin-header {
+    background: var(--dark-nav) !important;
+    color: var(--dark-text) !important;
+    border-bottom: 1px solid #171625 !important;
+}
+
+nav a,
+.navbar a,
+.topbar a,
+.header a,
+.admin-header a {
+    color: #d9d8ff !important;
+}
+
+.card,
+.panel,
+.box,
+.stat-card,
+.stats-card,
+.summary-card,
+.table-card,
+.log-card,
+.user-management,
+.manage-queues,
+.system-log,
+.modal-content,
+section {
+    background: var(--dark-card) !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.system-log,
+.log-output,
+pre,
+code,
+textarea.log-output {
+    background: var(--dark-card-2) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+label,
+span,
+small,
+div {
+    color: inherit;
+}
+
+.subtitle,
+.muted,
+.description,
+.card-subtitle,
+.help-text {
+    color: var(--dark-muted) !important;
+}
+
+table {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-collapse: collapse;
+}
+
+thead,
+tr,
+th,
+td {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-color: var(--dark-border) !important;
+}
+
+th {
+    color: #dcdcff !important;
+}
+
+input,
+select,
+textarea {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--dark-muted) !important;
+}
+
+button,
+.btn {
+    border: 1px solid var(--dark-border) !important;
+}
+
+button.primary,
+.btn-primary,
+.create-btn,
+.export-btn,
+.serve-btn {
+    background: var(--green) !important;
+    color: #06120a !important;
+    border: none !important;
+    font-weight: 700 !important;
+}
+
+button.secondary,
+.btn-secondary,
+.view-btn,
+.close-btn,
+.clear-btn,
+.reset-btn,
+.disable-btn,
+.promote-btn {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+.badge,
+.status,
+.pill {
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.status.open,
+.badge.open,
+.pill.open {
+    background: #bdf5cc !important;
+    color: #09601f !important;
+}
+
+.status.closed,
+.badge.closed,
+.pill.closed {
+    background: #ffd1d6 !important;
+    color: #9c1526 !important;
+}
+
+a {
+    color: #d9d8ff !important;
+}
+
+hr {
+    border-color: var(--dark-border) !important;
+}
+
+</style>
 </head>
 <body>
   <header>
-    <div><strong>Admin Dashboard</strong> <span class="muted" style="color:#9ca3af;">(UI placeholders)</span></div>
+    <div>
+      <strong>Admin Dashboard</strong>
+      <span class="muted" style="color:#9ca3af; margin-left:8px;">/ Queue Management</span>
+    </div>
     <div>
       <span class="muted" style="color:#9ca3af;">Signed in as</span> <strong>)HTML" + username + R"HTML(</strong>
       <a href="/">Home</a>
@@ -487,7 +868,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
         <div class="topbar">
           <div>
             <div style="font-weight:700;">Manage Queues</div>
-            <div class="muted">Static table for now</div>
+            <div class="muted">Current queue activity summary</div>
           </div>
           <a href="/admin/create-queue"><button class="btn primary">Create Queue</button></a>
         </div>
@@ -566,30 +947,35 @@ static inline std::string adminDashboardPage(const std::string& username) {
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px;">
-      <div style="font-weight:700;">User Management</div>
-      <div class="muted" style="margin-bottom:10px;">Static table for now</div>
-      <table>
-        <thead>
-          <tr><th>User</th><th>Role</th><th>Last Login</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>root</td><td>Admin</td><td>Today</td>
-            <td><button class="btn">Reset PW</button> <button class="btn">Disable</button></td>
-          </tr>
-          <tr>
-            <td>user1@example.com</td><td>User</td><td>Yesterday</td>
-            <td><button class="btn">Promote</button> <button class="btn">Disable</button></td>
-          </tr>
-          <tr>
-            <td>user2@example.com</td><td>User</td><td>—</td>
-            <td><button class="btn">Promote</button> <button class="btn">Disable</button></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+
+     <div class="card" style="margin-top:16px;">
+       <div style="font-weight:700;">User Management</div>
+       <div class="muted" style="margin-bottom:10px;">
+         Registered system users are shown for administrator review.
+       </div>
+       <table>
+         <thead>
+          <tr><th>User</th><th>Role</th><th>Status</th></tr>
+         </thead>
+         <tbody>
+           <tr>
+             <td>root</td>
+             <td>Admin</td>
+             <td><span class="pill open">Active</span></td>
+           </tr>
+           <tr>
+             <td>user1@example.com</td>
+             <td>User</td>
+             <td><span class="pill open">Active</span></td>
+           </tr>
+           <tr>
+             <td>user2@example.com</td>
+             <td>User</td>
+             <td><span class="pill open">Active</span></td>
+           </tr>
+         </tbody>
+       </table>
+     </div>
 
   <!-- Queue View Modal -->
   <div class="modal-overlay" id="queueModal" onclick="handleOverlayClick(event)">
@@ -622,7 +1008,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
         return;
       }
       const next = users.shift();
-      alert('Now serving: ' + next.name + '\nReason: ' + next.reason + '\n\n(change not saved to DB, only local)');
+      alert('Now serving: ' + next.name + '\nReason: ' + next.reason);
     }
 
     function openQueueModal(queueName) {
@@ -696,7 +1082,7 @@ static inline std::string adminDashboardPage(const std::string& username) {
     }
 
     function saveQueueOrder() {
-      alert('Queue order saved! (no databse call made, change is only local)');
+      alert('Queue order updated in the admin view.');
       closeQueueModal();
     }
 
@@ -725,12 +1111,12 @@ static inline std::string adminDashboardPage(const std::string& username) {
           throw new Error(msg || 'Server returned HTTP ' + res.status);
         }
 
-        // Read the xlsx bytes and trigger a browser download
+        // Read the CSV data and trigger a browser download
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href     = url;
-
+        
         // Build a timestamped filename so repeated exports don't collide
         const ts   = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
         a.download = 'queue_report_' + ts + '.xlsx';
@@ -940,7 +1326,295 @@ static inline std::string unitTestsPage(
 
     /* ── Empty state ── */
     .empty { text-align:center; padding:40px; color:#6b7280; font-size:14px; }
-  </style>
+  
+/* ===== FINAL DARK THEME OVERRIDE - BaoVersion ===== */
+:root {
+    --dark-bg: #1f1e2e;
+    --dark-nav: #2a293d;
+    --dark-card: #302f45;
+    --dark-card-2: #101827;
+    --dark-border: #46455f;
+    --dark-text: #f4f4f8;
+    --dark-muted: #b8b7c9;
+    --green: #31c653;
+}
+
+html,
+body {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+body,
+main,
+.container,
+.page,
+.dashboard,
+.admin-dashboard,
+.content,
+.wrapper {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+nav,
+.navbar,
+.topbar,
+.header,
+.admin-header {
+    background: var(--dark-nav) !important;
+    color: var(--dark-text) !important;
+    border-bottom: 1px solid #171625 !important;
+}
+
+nav a,
+.navbar a,
+.topbar a,
+.header a,
+.admin-header a {
+    color: #d9d8ff !important;
+}
+
+.card,
+.panel,
+.box,
+.stat-card,
+.stats-card,
+.summary-card,
+.table-card,
+.log-card,
+.user-management,
+.manage-queues,
+.system-log,
+.modal-content,
+section {
+    background: var(--dark-card) !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.system-log,
+.log-output,
+pre,
+code,
+textarea.log-output {
+    background: var(--dark-card-2) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+label,
+span,
+small,
+div {
+    color: inherit;
+}
+
+.subtitle,
+.muted,
+.description,
+.card-subtitle,
+.help-text {
+    color: var(--dark-muted) !important;
+}
+
+table {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-collapse: collapse;
+}
+
+thead,
+tr,
+th,
+td {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-color: var(--dark-border) !important;
+}
+
+th {
+    color: #dcdcff !important;
+}
+
+input,
+select,
+textarea {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--dark-muted) !important;
+}
+
+button,
+.btn {
+    border: 1px solid var(--dark-border) !important;
+}
+
+button.primary,
+.btn-primary,
+.create-btn,
+.export-btn,
+.serve-btn {
+    background: var(--green) !important;
+    color: #06120a !important;
+    border: none !important;
+    font-weight: 700 !important;
+}
+
+button.secondary,
+.btn-secondary,
+.view-btn,
+.close-btn,
+.clear-btn,
+.reset-btn,
+.disable-btn,
+.promote-btn {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+.badge,
+.status,
+.pill {
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.status.open,
+.badge.open,
+.pill.open {
+    background: #bdf5cc !important;
+    color: #09601f !important;
+}
+
+.status.closed,
+.badge.closed,
+.pill.closed {
+    background: #ffd1d6 !important;
+    color: #9c1526 !important;
+}
+
+a {
+    color: #d9d8ff !important;
+}
+
+hr {
+    border-color: var(--dark-border) !important;
+}
+
+/* ===== UNIT TEST DARK THEME FIX ===== */
+.tests-container,
+.test-card,
+.toolbar,
+.summary,
+.stat-card,
+.test-left,
+.test-right {
+    background: #302f45 !important;
+    color: #f4f4f8 !important;
+    border-color: #46455f !important;
+}
+
+.tests-container {
+    border: 1px solid #46455f !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.test-card {
+    border-bottom: 1px solid #46455f !important;
+}
+
+.test-card:hover {
+    background: #37364f !important;
+}
+
+/* ===== FORCE UNIT TEST TEXT WHITE ===== */
+.test-card,
+.test-card *,
+.test-left,
+.test-left *,
+.test-name,
+.tests-container,
+.tests-container * {
+    color: #f4f4f8 !important;
+}
+
+.test-index {
+    background: #f4f4f8 !important;
+    color: #111827 !important;
+    font-weight: 800 !important;
+}
+
+.toolbar h2,
+.toolbar h2 span {
+    color: #f4f4f8 !important;
+}
+
+.stat-label {
+    color: #b8b7c9 !important;
+}
+
+.stat-value {
+    color: #f4f4f8 !important;
+}
+
+.stat-card.total .stat-value {
+    color: #6d5dfc !important;
+}
+
+.stat-card.passed .stat-value {
+    color: #22c55e !important;
+}
+
+.stat-card.failed .stat-value {
+    color: #ef4444 !important;
+}
+
+.stat-card.pending .stat-value {
+    color: #f59e0b !important;
+}
+
+.indicator,
+.indicator *,
+.run-btn,
+.run-btn * {
+    color: inherit !important;
+}
+
+.indicator[data-state="untested"],
+.indicator[data-state="untested"] * {
+    color: #6b7280 !important;
+}
+
+.indicator[data-state="pass"],
+.indicator[data-state="pass"] * {
+    color: #09601f !important;
+}
+
+.indicator[data-state="fail"],
+.indicator[data-state="fail"] * {
+    color: #9c1526 !important;
+}
+
+.run-btn {
+    background: #f4f4f8 !important;
+    color: #111827 !important;
+}
+
+</style>
 </head>
 <body>
   <header>

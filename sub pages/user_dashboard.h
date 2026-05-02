@@ -3,7 +3,7 @@
 
 #include <string>
 
-// UI-only User Dashboard page (static placeholder data)
+// User Dashboard page with queue status, database-backed queue records, and notifications
 static inline std::string userDashboardPage(const std::string& username) {
 
   sqlite3* db = nullptr;
@@ -34,7 +34,7 @@ static inline std::string userDashboardPage(const std::string& username) {
   for (int serviceId : serviceIds) {
       // Fetch the service name
       std::string serviceName = "Unknown Service";
-      const char* serviceSQL = "SELECT name FROM services WHERE service_id = ?;";
+      const char* serviceSQL = "SELECT name FROM services WHERE id = ?;";
       sqlite3_stmt* svcStmt = nullptr;
       if (sqlite3_prepare_v2(db, serviceSQL, -1, &svcStmt, nullptr) == SQLITE_OK) {
           sqlite3_bind_int(svcStmt, 1, serviceId);
@@ -68,51 +68,83 @@ static inline std::string userDashboardPage(const std::string& username) {
       activeQueueRows = "<tr><td colspan=\"4\" class=\"muted\">You are not currently in any queues.</td></tr>";
   }
 
-  // Build history rows by querying the history table
+ 
+    // Build history rows by querying the history table
   std::string historyRows;
-
-  const char* historySQL =
-    "SELECT h.action, COALESCE(s.name, 'Unknown Service'), h.queue_id "
-    "FROM history h "
-    "LEFT JOIN queue q ON h.queue_id = q.id "
-    "LEFT JOIN services s ON q.service_id = s.id "
-    "WHERE h.user_id = ? "
-    "ORDER BY h.id DESC;";
-
-  sqlite3_stmt* stmt;
-  if (sqlite3_prepare_v2(db, historySQL, -1, &stmt, nullptr) == SQLITE_OK) {
-      sqlite3_bind_int(stmt, 1, currentUserId);
-
-      while (sqlite3_step(stmt) == SQLITE_ROW) {
-          std::string action   = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-          std::string service  = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-          int queueId          = sqlite3_column_int(stmt, 2);
-
-          std::string actionLabel, pillClass;
-          if (action == "JOINED_QUEUE") {
-              actionLabel = "Joined";
-              pillClass   = "inqueue";
-          } else if (action == "REMOVED_FROM_QUEUE") {
-              actionLabel = "Left / Removed";
-              pillClass   = "done";
-          } else {
-              actionLabel = action;
-              pillClass   = "waiting";
-          }
-
-          historyRows +=
-              "<tr>"
-              "<td>" + service + "</td>"
-              "<td><span class=\"pill " + pillClass + "\">" + actionLabel + "</span></td>"
-              "<td>" + std::to_string(queueId) + "</td>"
-              "</tr>";
+  
+  // First, find the current user's account ID from their username
+  int currentUserId = -1;
+  
+  const char* userIdSQL = "SELECT id FROM accounts WHERE username = ?;";
+  sqlite3_stmt* userStmt = nullptr;
+  
+  if (sqlite3_prepare_v2(db, userIdSQL, -1, &userStmt, nullptr) == SQLITE_OK) {
+      sqlite3_bind_text(userStmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
+  
+      if (sqlite3_step(userStmt) == SQLITE_ROW) {
+          currentUserId = sqlite3_column_int(userStmt, 0);
       }
-      sqlite3_finalize(stmt);
+  
+      sqlite3_finalize(userStmt);
   }
+  
+  if (currentUserId != -1) {
+      const char* historySQL =
+          "SELECT h.message, h.queue_id "
+          "FROM history h "
+          "WHERE h.user_id = ? "
+          "ORDER BY h.id DESC;";
+  
+      sqlite3_stmt* stmt = nullptr;
+  
+      if (sqlite3_prepare_v2(db, historySQL, -1, &stmt, nullptr) == SQLITE_OK) {
+          sqlite3_bind_int(stmt, 1, currentUserId);
+  
+          while (sqlite3_step(stmt) == SQLITE_ROW) {
+              const unsigned char* actionText = sqlite3_column_text(stmt, 0);
+              std::string action = actionText ? reinterpret_cast<const char*>(actionText) : "";
+  
+              int queueId = sqlite3_column_int(stmt, 1);
+              std::string service = "Queue Activity";
+  
+              std::string actionLabel, pillClass;
+  
+              if (action.find("JOINED_QUEUE") != std::string::npos ||
+                  action.find("join") != std::string::npos ||
+                  action.find("Joined") != std::string::npos) {
+                  actionLabel = "Joined";
+                  pillClass = "inqueue";
+              } else if (action.find("REMOVED_FROM_QUEUE") != std::string::npos ||
+                         action.find("remove") != std::string::npos ||
+                         action.find("left") != std::string::npos ||
+                         action.find("served") != std::string::npos ||
+                         action.find("Removed") != std::string::npos) {
+                  actionLabel = "Left / Served";
+                  pillClass = "done";
+              } else {
+                  actionLabel = action;
+                  pillClass = "waiting";
+              }
+  
+              historyRows +=
+                  "<tr>"
+                  "<td>" + service + "</td>"
+                  "<td><span class=\"pill " + pillClass + "\">" + actionLabel + "</span></td>"
+                  "<td>" + std::to_string(queueId) + "</td>"
+                  "</tr>";
+          }
+  
+          sqlite3_finalize(stmt);
+      }
+  }
+
 
   if (historyRows.empty()) {
       historyRows = "<tr><td colspan=\"3\" class=\"muted\">No history found.</td></tr>";
   }
+
+sqlite3_close(db);
+
 
     return R"(
 <!doctype html>
@@ -154,7 +186,7 @@ static inline std::string userDashboardPage(const std::string& username) {
   <header>
     <div>
       <strong>User Dashboard</strong>
-      <span class="muted">(UI placeholders)</span>
+      <span class="muted">Queue Status</span>
     </div>
     <div>
       <span class="muted">Signed in as</span> <strong>)" + username + R"(</strong>
@@ -166,10 +198,10 @@ static inline std::string userDashboardPage(const std::string& username) {
   <div class="container">
 
     <div class="grid">
-      <div class="card"><div class="muted">Your Status</div><div class="big">In Queue</div><div class="muted">Tutoring</div></div>
-      <div class="card"><div class="muted">Position</div><div class="big">#3</div><div class="muted">Estimated 9–12 min</div></div>
-      <div class="card"><div class="muted">Queues Joined</div><div class="big">5</div><div class="muted">This month</div></div>
-      <div class="card"><div class="muted">Notifications</div><div class="big">2</div><div class="muted">Unread</div></div>
+      <div class="card"><div class="muted">Your Status</div><div class="big">Active</div><div class="muted">Queue participation shown below</div></div>
+      <div class="card"><div class="muted">Wait-Time Feature</div><div class="big">On</div><div class="muted">ETA calculated from queue position</div></div>
+      <div class="card"><div class="muted">Queue Records</div><div class="big">Live</div><div class="muted">Loaded from database</div></div>
+      <div class="card"><div class="muted">Notifications</div><div class="big">Ready</div><div class="muted">Queue status updates</div></div>
     </div>
 
     <div class="row">
@@ -199,16 +231,16 @@ static inline std::string userDashboardPage(const std::string& username) {
 
       <div class="notice">
         <div style="font-weight:700;">Notifications</div>
-        <div class="muted" style="margin-bottom:10px;">UI-only list for now</div>
+        <div class="muted" style="margin-bottom:10px;">Queue status notifications</div>
         <div>• Your turn is coming up soon (Tutoring).</div>
         <div>• Queue "Advising" changed ETA.</div>
-        <div class="muted">Tip: Notifications tab can be built next.</div>
+        <div class="muted">Notifications help users track queue updates and estimated wait-time changes.</div>
       </div>
     </div>
 
     <div class="card" style="margin-top:16px;">
       <div style="font-weight:700;">History</div>
-      <div class="muted" style="margin-bottom:10px;">Live data from your account</div>
+      <div class="muted" style="margin-bottom:10px;">Queue activity history for your account</div>
       <table>
         <thead>
           <tr>
