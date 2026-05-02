@@ -182,13 +182,58 @@ int main() {
   <meta charset="utf-8">
   <title>Queue Analytics</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; color: #111827; }
-    .container { max-width: 900px; margin: 60px auto; padding: 24px; }
-    .card { background: white; padding: 24px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 16px; }
-    h1 { margin-top: 0; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .big { font-size: 28px; font-weight: 700; color: #16a34a; }
-    a { color: #111827; font-weight: 700; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #1e1e2f;
+      color: #f4f4f8;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #302f45;
+      color: #f4f4f8;
+      padding: 24px;
+      border-radius: 14px;
+      border: 1px solid #46455f;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #f4f4f8;
+    }
+
+    p, div {
+      color: #f4f4f8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .big {
+      font-size: 28px;
+      font-weight: 700;
+      color: #4ade80;
+    }
+
+    a {
+      color: #f4f4f8;
+      font-weight: 700;
+    }
+
+    a:hover {
+      color: #4ade80;
+    }
   </style>
 </head>
 <body>
@@ -219,12 +264,67 @@ int main() {
   <meta charset="utf-8">
   <title>Edit Queue Data</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; color: #111827; }
-    .container { max-width: 900px; margin: 60px auto; padding: 24px; }
-    .card { background: white; padding: 24px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-    th, td { padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left; }
-    a { color: #111827; font-weight: 700; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #1e1e2f;
+      color: #f4f4f8;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #302f45;
+      color: #f4f4f8;
+      padding: 24px;
+      border-radius: 14px;
+      border: 1px solid #46455f;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    }
+
+    h1, p {
+      color: #f4f4f8;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      color: #f4f4f8;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #46455f;
+      text-align: left;
+      color: #f4f4f8;
+    }
+
+    th {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    td {
+      color: #f4f4f8;
+    }
+
+    tr:hover {
+      background: rgba(255,255,255,0.04);
+    }
+
+    a {
+      color: #f4f4f8;
+      font-weight: 700;
+    }
+
+    a:hover {
+      color: #4ade80;
+    }
   </style>
 </head>
 <body>
