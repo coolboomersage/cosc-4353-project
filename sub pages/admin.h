@@ -1520,6 +1520,92 @@ hr {
     border-color: #46455f !important;
 }
 
+.tests-container {
+    border: 1px solid #46455f !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.test-card {
+    border-bottom: 1px solid #46455f !important;
+}
+
+.test-card:hover {
+    background: #37364f !important;
+}
+
+/* ===== FORCE UNIT TEST TEXT WHITE ===== */
+.test-card,
+.test-card *,
+.test-left,
+.test-left *,
+.test-name,
+.tests-container,
+.tests-container * {
+    color: #f4f4f8 !important;
+}
+
+.test-index {
+    background: #f4f4f8 !important;
+    color: #111827 !important;
+    font-weight: 800 !important;
+}
+
+.toolbar h2,
+.toolbar h2 span {
+    color: #f4f4f8 !important;
+}
+
+.stat-label {
+    color: #b8b7c9 !important;
+}
+
+.stat-value {
+    color: #f4f4f8 !important;
+}
+
+.stat-card.total .stat-value {
+    color: #6d5dfc !important;
+}
+
+.stat-card.passed .stat-value {
+    color: #22c55e !important;
+}
+
+.stat-card.failed .stat-value {
+    color: #ef4444 !important;
+}
+
+.stat-card.pending .stat-value {
+    color: #f59e0b !important;
+}
+
+.indicator,
+.indicator *,
+.run-btn,
+.run-btn * {
+    color: inherit !important;
+}
+
+.indicator[data-state="untested"],
+.indicator[data-state="untested"] * {
+    color: #6b7280 !important;
+}
+
+.indicator[data-state="pass"],
+.indicator[data-state="pass"] * {
+    color: #09601f !important;
+}
+
+.indicator[data-state="fail"],
+.indicator[data-state="fail"] * {
+    color: #9c1526 !important;
+}
+
+.run-btn {
+    background: #f4f4f8 !important;
+    color: #111827 !important;
+}
+
 </style>
 </head>
 <body>
