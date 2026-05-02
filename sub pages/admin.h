@@ -844,7 +844,10 @@ hr {
 </head>
 <body>
   <header>
-    <div><strong>Admin Dashboard</strong><span class="muted" style="color:#9ca3af;">Queue Management</span></div>
+    <div>
+      <strong>Admin Dashboard</strong>
+      <span class="muted" style="color:#9ca3af; margin-left:8px;">/ Queue Management</span>
+    </div>
     <div>
       <span class="muted" style="color:#9ca3af;">Signed in as</span> <strong>)HTML" + username + R"HTML(</strong>
       <a href="/">Home</a>
@@ -944,30 +947,35 @@ hr {
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px;">
-      <div style="font-weight:700;">User Management</div>
-      <div class="muted" style="margin-bottom:10px;">Registered system users</div>
-      <table>
-        <thead>
-          <tr><th>User</th><th>Role</th><th>Last Login</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>root</td><td>Admin</td><td>Today</td>
-            <td><button class="btn">Reset PW</button> <button class="btn">Disable</button></td>
-          </tr>
-          <tr>
-            <td>user1@example.com</td><td>User</td><td>Yesterday</td>
-            <td><button class="btn">Promote</button> <button class="btn">Disable</button></td>
-          </tr>
-          <tr>
-            <td>user2@example.com</td><td>User</td><td>—</td>
-            <td><button class="btn">Promote</button> <button class="btn">Disable</button></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+
+     <div class="card" style="margin-top:16px;">
+       <div style="font-weight:700;">User Management</div>
+       <div class="muted" style="margin-bottom:10px;">
+         Registered system users are shown for administrator review.
+       </div>
+       <table>
+         <thead>
+          <tr><th>User</th><th>Role</th><th>Status</th></tr>
+         </thead>
+         <tbody>
+           <tr>
+             <td>root</td>
+             <td>Admin</td>
+             <td><span class="pill open">Active</span></td>
+           </tr>
+           <tr>
+             <td>user1@example.com</td>
+             <td>User</td>
+             <td><span class="pill open">Active</span></td>
+           </tr>
+           <tr>
+             <td>user2@example.com</td>
+             <td>User</td>
+             <td><span class="pill open">Active</span></td>
+           </tr>
+         </tbody>
+       </table>
+     </div>
 
   <!-- Queue View Modal -->
   <div class="modal-overlay" id="queueModal" onclick="handleOverlayClick(event)">
