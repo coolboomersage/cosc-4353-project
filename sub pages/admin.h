@@ -1080,7 +1080,7 @@ hr {
 
     // ── Export Report ──────────────────────────────────────────────────────────
     // POSTs to /admin/export-report. The server calls exportDatabaseReport(),
-    // writes the xlsx to a temp path, then responds with the raw file bytes and
+    // writes the csv to a temp path, then responds with the raw file bytes and
     // Content-Disposition: attachment so the browser saves it automatically.
     async function exportReport() {
       const btn = document.getElementById('exportBtn');
@@ -1103,15 +1103,15 @@ hr {
           throw new Error(msg || 'Server returned HTTP ' + res.status);
         }
 
-        // Read the xlsx bytes and trigger a browser download
+        // Read the CSV data and trigger a browser download
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href     = url;
-
+        
         // Build a timestamped filename so repeated exports don't collide
         const ts   = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-        a.download = 'queue_report_' + ts + '.xlsx';
+        a.download = 'queue_report_' + ts + '.csv';
 
         document.body.appendChild(a);
         a.click();
@@ -1505,6 +1505,19 @@ a {
 
 hr {
     border-color: var(--dark-border) !important;
+}
+
+/* ===== UNIT TEST DARK THEME FIX ===== */
+.tests-container,
+.test-card,
+.toolbar,
+.summary,
+.stat-card,
+.test-left,
+.test-right {
+    background: #302f45 !important;
+    color: #f4f4f8 !important;
+    border-color: #46455f !important;
 }
 
 </style>
