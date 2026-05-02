@@ -184,7 +184,196 @@ static inline std::string createQueuePage(const std::string& username, const std
 
     .field-error { font-size: 11px; color: #ef4444; display: none; }
     .field-error.visible { display: block; }
-  </style>
+  
+/* ===== FINAL DARK THEME OVERRIDE - BaoVersion ===== */
+:root {
+    --dark-bg: #1f1e2e;
+    --dark-nav: #2a293d;
+    --dark-card: #302f45;
+    --dark-card-2: #101827;
+    --dark-border: #46455f;
+    --dark-text: #f4f4f8;
+    --dark-muted: #b8b7c9;
+    --green: #31c653;
+}
+
+html,
+body {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+body,
+main,
+.container,
+.page,
+.dashboard,
+.admin-dashboard,
+.content,
+.wrapper {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+nav,
+.navbar,
+.topbar,
+.header,
+.admin-header {
+    background: var(--dark-nav) !important;
+    color: var(--dark-text) !important;
+    border-bottom: 1px solid #171625 !important;
+}
+
+nav a,
+.navbar a,
+.topbar a,
+.header a,
+.admin-header a {
+    color: #d9d8ff !important;
+}
+
+.card,
+.panel,
+.box,
+.stat-card,
+.stats-card,
+.summary-card,
+.table-card,
+.log-card,
+.user-management,
+.manage-queues,
+.system-log,
+.modal-content,
+section {
+    background: var(--dark-card) !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.system-log,
+.log-output,
+pre,
+code,
+textarea.log-output {
+    background: var(--dark-card-2) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+label,
+span,
+small,
+div {
+    color: inherit;
+}
+
+.subtitle,
+.muted,
+.description,
+.card-subtitle,
+.help-text {
+    color: var(--dark-muted) !important;
+}
+
+table {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-collapse: collapse;
+}
+
+thead,
+tr,
+th,
+td {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-color: var(--dark-border) !important;
+}
+
+th {
+    color: #dcdcff !important;
+}
+
+input,
+select,
+textarea {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--dark-muted) !important;
+}
+
+button,
+.btn {
+    border: 1px solid var(--dark-border) !important;
+}
+
+button.primary,
+.btn-primary,
+.create-btn,
+.export-btn,
+.serve-btn {
+    background: var(--green) !important;
+    color: #06120a !important;
+    border: none !important;
+    font-weight: 700 !important;
+}
+
+button.secondary,
+.btn-secondary,
+.view-btn,
+.close-btn,
+.clear-btn,
+.reset-btn,
+.disable-btn,
+.promote-btn {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+.badge,
+.status,
+.pill {
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.status.open,
+.badge.open,
+.pill.open {
+    background: #bdf5cc !important;
+    color: #09601f !important;
+}
+
+.status.closed,
+.badge.closed,
+.pill.closed {
+    background: #ffd1d6 !important;
+    color: #9c1526 !important;
+}
+
+a {
+    color: #d9d8ff !important;
+}
+
+hr {
+    border-color: var(--dark-border) !important;
+}
+
+</style>
 </head>
 <body>
   <header>
@@ -462,7 +651,196 @@ static inline std::string adminDashboardPage(const std::string& username) {
     .queue-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
     .queue-wait { font-size: 12px; color: #374151; background: #f3f4f6; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
     .drag-hint { font-size: 12px; color: #9ca3af; margin-bottom: 12px; }
-  </style>
+  
+/* ===== FINAL DARK THEME OVERRIDE - BaoVersion ===== */
+:root {
+    --dark-bg: #1f1e2e;
+    --dark-nav: #2a293d;
+    --dark-card: #302f45;
+    --dark-card-2: #101827;
+    --dark-border: #46455f;
+    --dark-text: #f4f4f8;
+    --dark-muted: #b8b7c9;
+    --green: #31c653;
+}
+
+html,
+body {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+body,
+main,
+.container,
+.page,
+.dashboard,
+.admin-dashboard,
+.content,
+.wrapper {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+nav,
+.navbar,
+.topbar,
+.header,
+.admin-header {
+    background: var(--dark-nav) !important;
+    color: var(--dark-text) !important;
+    border-bottom: 1px solid #171625 !important;
+}
+
+nav a,
+.navbar a,
+.topbar a,
+.header a,
+.admin-header a {
+    color: #d9d8ff !important;
+}
+
+.card,
+.panel,
+.box,
+.stat-card,
+.stats-card,
+.summary-card,
+.table-card,
+.log-card,
+.user-management,
+.manage-queues,
+.system-log,
+.modal-content,
+section {
+    background: var(--dark-card) !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.system-log,
+.log-output,
+pre,
+code,
+textarea.log-output {
+    background: var(--dark-card-2) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+label,
+span,
+small,
+div {
+    color: inherit;
+}
+
+.subtitle,
+.muted,
+.description,
+.card-subtitle,
+.help-text {
+    color: var(--dark-muted) !important;
+}
+
+table {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-collapse: collapse;
+}
+
+thead,
+tr,
+th,
+td {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-color: var(--dark-border) !important;
+}
+
+th {
+    color: #dcdcff !important;
+}
+
+input,
+select,
+textarea {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--dark-muted) !important;
+}
+
+button,
+.btn {
+    border: 1px solid var(--dark-border) !important;
+}
+
+button.primary,
+.btn-primary,
+.create-btn,
+.export-btn,
+.serve-btn {
+    background: var(--green) !important;
+    color: #06120a !important;
+    border: none !important;
+    font-weight: 700 !important;
+}
+
+button.secondary,
+.btn-secondary,
+.view-btn,
+.close-btn,
+.clear-btn,
+.reset-btn,
+.disable-btn,
+.promote-btn {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+.badge,
+.status,
+.pill {
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.status.open,
+.badge.open,
+.pill.open {
+    background: #bdf5cc !important;
+    color: #09601f !important;
+}
+
+.status.closed,
+.badge.closed,
+.pill.closed {
+    background: #ffd1d6 !important;
+    color: #9c1526 !important;
+}
+
+a {
+    color: #d9d8ff !important;
+}
+
+hr {
+    border-color: var(--dark-border) !important;
+}
+
+</style>
 </head>
 <body>
   <header>
@@ -940,7 +1318,196 @@ static inline std::string unitTestsPage(
 
     /* ── Empty state ── */
     .empty { text-align:center; padding:40px; color:#6b7280; font-size:14px; }
-  </style>
+  
+/* ===== FINAL DARK THEME OVERRIDE - BaoVersion ===== */
+:root {
+    --dark-bg: #1f1e2e;
+    --dark-nav: #2a293d;
+    --dark-card: #302f45;
+    --dark-card-2: #101827;
+    --dark-border: #46455f;
+    --dark-text: #f4f4f8;
+    --dark-muted: #b8b7c9;
+    --green: #31c653;
+}
+
+html,
+body {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+body,
+main,
+.container,
+.page,
+.dashboard,
+.admin-dashboard,
+.content,
+.wrapper {
+    background: var(--dark-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+nav,
+.navbar,
+.topbar,
+.header,
+.admin-header {
+    background: var(--dark-nav) !important;
+    color: var(--dark-text) !important;
+    border-bottom: 1px solid #171625 !important;
+}
+
+nav a,
+.navbar a,
+.topbar a,
+.header a,
+.admin-header a {
+    color: #d9d8ff !important;
+}
+
+.card,
+.panel,
+.box,
+.stat-card,
+.stats-card,
+.summary-card,
+.table-card,
+.log-card,
+.user-management,
+.manage-queues,
+.system-log,
+.modal-content,
+section {
+    background: var(--dark-card) !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.system-log,
+.log-output,
+pre,
+code,
+textarea.log-output {
+    background: var(--dark-card-2) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+label,
+span,
+small,
+div {
+    color: inherit;
+}
+
+.subtitle,
+.muted,
+.description,
+.card-subtitle,
+.help-text {
+    color: var(--dark-muted) !important;
+}
+
+table {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-collapse: collapse;
+}
+
+thead,
+tr,
+th,
+td {
+    background: transparent !important;
+    color: var(--dark-text) !important;
+    border-color: var(--dark-border) !important;
+}
+
+th {
+    color: #dcdcff !important;
+}
+
+input,
+select,
+textarea {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--dark-muted) !important;
+}
+
+button,
+.btn {
+    border: 1px solid var(--dark-border) !important;
+}
+
+button.primary,
+.btn-primary,
+.create-btn,
+.export-btn,
+.serve-btn {
+    background: var(--green) !important;
+    color: #06120a !important;
+    border: none !important;
+    font-weight: 700 !important;
+}
+
+button.secondary,
+.btn-secondary,
+.view-btn,
+.close-btn,
+.clear-btn,
+.reset-btn,
+.disable-btn,
+.promote-btn {
+    background: #25243a !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+.badge,
+.status,
+.pill {
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.status.open,
+.badge.open,
+.pill.open {
+    background: #bdf5cc !important;
+    color: #09601f !important;
+}
+
+.status.closed,
+.badge.closed,
+.pill.closed {
+    background: #ffd1d6 !important;
+    color: #9c1526 !important;
+}
+
+a {
+    color: #d9d8ff !important;
+}
+
+hr {
+    border-color: var(--dark-border) !important;
+}
+
+</style>
 </head>
 <body>
   <header>
