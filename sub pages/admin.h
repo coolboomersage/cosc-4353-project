@@ -1080,7 +1080,7 @@ hr {
 
     // ── Export Report ──────────────────────────────────────────────────────────
     // POSTs to /admin/export-report. The server calls exportDatabaseReport(),
-    // writes the csv to a temp path, then responds with the raw file bytes and
+    // writes the xlsx to a temp path, then responds with the raw file bytes and
     // Content-Disposition: attachment so the browser saves it automatically.
     async function exportReport() {
       const btn = document.getElementById('exportBtn');
@@ -1111,7 +1111,7 @@ hr {
         
         // Build a timestamped filename so repeated exports don't collide
         const ts   = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-        a.download = 'queue_report_' + ts + '.csv';
+        a.download = 'queue_report_' + ts + '.xlsx';
 
         document.body.appendChild(a);
         a.click();
