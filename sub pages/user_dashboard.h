@@ -143,6 +143,9 @@ static inline std::string userDashboardPage(const std::string& username) {
       historyRows = "<tr><td colspan=\"3\" class=\"muted\">No history found.</td></tr>";
   }
 
+sqlite3_close(db);
+
+
     return R"(
 <!doctype html>
 <html>
